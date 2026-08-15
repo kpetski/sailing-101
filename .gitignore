@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Your own textbook photos + calibrated pin positions — dev-only, never
+# built or deployed. See README "Using your own textbook photos".
+/local-assets/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

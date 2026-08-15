@@ -93,6 +93,40 @@ up automatically.
   matching points array here (coordinates are in the SVG's own coordinate
   space — `HullArt`/`RigArt` show the viewBox).
 
+## Using your own textbook photos (local only)
+
+The public site uses original schematic art (`LabelDiagram.tsx`), not your
+textbook's actual illustrations — those are copyrighted by US Sailing, and
+this is a public site, so embedding a photo of them would be redistributing
+copyrighted material to anyone who visits the URL.
+
+If you'd rather study against your *actual* textbook photos, there's a
+local-only version of the labeling tool that never gets built or deployed:
+
+1. Save your photos into `local-assets/` (gitignored) as `hull.jpg` and
+   `rig.jpg` — see `local-assets/README.md` for exact instructions.
+2. Run `npm run dev` and open the Boat Nomenclature or Rig Parts reference
+   page. A "Your photo — local only, never deployed" card appears
+   automatically once it detects the file.
+3. **Calibrate**: click on the photo for each part in turn, then **Save to
+   disk** (writes `local-assets/hull-points.json` etc.). **Practice** and
+   **Match** modes then work the same way as the built-in diagram, but
+   against your real photo.
+
+This is safe to leave in place — `vite.config.ts`'s `localAssetsPlugin` uses
+`apply: 'serve'`, so the code that serves `local-assets/` only runs for
+`vite dev` and is never invoked during `vite build` / `npm run deploy`, and
+nothing under `local-assets/` is ever imported by app code (it's fetched by
+URL at runtime), so there's no path by which it ends up in `dist/` or the
+`gh-pages` branch.
+
+**TODO (someday):** look for a real, license-compatible replacement for the
+public schematic diagram — e.g. a public-domain or CC0/CC-BY-licensed
+small-keelboat hull + rig diagram, or commission/draw one from scratch
+matching the textbook's exact term set. A quick search turned up mostly
+big-ship or gaff-rig diagrams under CC-BY-SA that didn't match well; nothing
+found yet that's both a clean license and the right boat type.
+
 ## How it's built
 
 - **`src/components/PointsOfSailDiagram.tsx`** — the reusable SVG diagram

@@ -5,8 +5,15 @@ import { TERMS } from "../data/terms";
 import type { TopicId } from "../data/types";
 import PointsOfSailDiagram from "../components/PointsOfSailDiagram";
 import LabelDiagram, { HULL_LABEL_POINTS, RIG_LABEL_POINTS, type LabelPoint } from "../components/LabelDiagram";
+import PhotoLabelStudio from "../components/PhotoLabelStudio";
 import { shuffle } from "../lib/shuffle";
 import styles from "./TopicReference.module.css";
+
+function pointsToTerms(points: LabelPoint[]) {
+  return points
+    .map((p) => TERMS.find((t) => t.id === p.id))
+    .filter((t): t is (typeof TERMS)[number] => Boolean(t));
+}
 
 const POINTS_OF_SAIL_OVERVIEW = [
   { heading: 0, color: "#a9c9c2", label: "No-Go" },
@@ -240,12 +247,14 @@ export default function TopicReference() {
 
       {topic.id === "nomenclature" && (
         <>
+          <PhotoLabelStudio variant="hull" terms={pointsToTerms(HULL_LABEL_POINTS)} />
           <LabelPractice variant="hull" points={HULL_LABEL_POINTS} />
           <LabelMatchGame variant="hull" points={HULL_LABEL_POINTS} />
         </>
       )}
       {topic.id === "rig" && (
         <>
+          <PhotoLabelStudio variant="rig" terms={pointsToTerms(RIG_LABEL_POINTS)} />
           <LabelPractice variant="rig" points={RIG_LABEL_POINTS} />
           <LabelMatchGame variant="rig" points={RIG_LABEL_POINTS} />
         </>
