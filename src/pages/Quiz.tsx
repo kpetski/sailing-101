@@ -9,19 +9,11 @@ import PointsOfSailDiagram, {
 } from "../components/PointsOfSailDiagram";
 import LabelDiagram from "../components/LabelDiagram";
 import { isCorrect, normalizeAnswer } from "../lib/grading";
+import { shuffle } from "../lib/shuffle";
 import { useQuizProgress } from "../hooks/useQuizProgress";
 import styles from "./Quiz.module.css";
 
 const MANEUVER_OPTIONS = Object.keys(MANEUVER_LABELS) as Maneuver[];
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 interface SessionResult {
   topic: TopicId;

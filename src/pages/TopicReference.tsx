@@ -5,6 +5,7 @@ import { TERMS } from "../data/terms";
 import type { TopicId } from "../data/types";
 import PointsOfSailDiagram from "../components/PointsOfSailDiagram";
 import LabelDiagram, { HULL_LABEL_POINTS, RIG_LABEL_POINTS, type LabelPoint } from "../components/LabelDiagram";
+import { shuffle } from "../lib/shuffle";
 import styles from "./TopicReference.module.css";
 
 const POINTS_OF_SAIL_OVERVIEW = [
@@ -130,6 +131,92 @@ function LabelPractice({ variant, points }: { variant: "hull" | "rig"; points: L
   );
 }
 
+function LabelMatchGame({ variant, points }: { variant: "hull" | "rig"; points: LabelPoint[] }) {
+  const [wordBank, setWordBank] = useState(() => shuffle(points.map((p) => p.id)));
+  const [matchedIds, setMatchedIds] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [wrongId, setWrongId] = useState<string | null>(null);
+
+  const termFor = (id: string) => TERMS.find((t) => t.id === id)?.term ?? id;
+  const done = matchedIds.length === points.length;
+
+  function selectPoint(id: string) {
+    if (matchedIds.includes(id)) return;
+    setSelectedId(id);
+  }
+
+  function attemptTerm(termId: string) {
+    if (!selectedId || matchedIds.includes(termId)) return;
+    if (termId === selectedId) {
+      setMatchedIds((prev) => [...prev, selectedId]);
+      setSelectedId(null);
+      setWrongId(null);
+    } else {
+      setWrongId(termId);
+      setTimeout(() => setWrongId((cur) => (cur === termId ? null : cur)), 400);
+    }
+  }
+
+  function reset() {
+    setWordBank(shuffle(points.map((p) => p.id)));
+    setMatchedIds([]);
+    setSelectedId(null);
+    setWrongId(null);
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>
+        Match all the labels
+      </div>
+      <div className={styles.diagramWrap}>
+        <LabelDiagram
+          variant={variant}
+          points={points}
+          matchedIds={matchedIds}
+          selectedId={selectedId ?? undefined}
+          showNumbers
+          labelFor={termFor}
+          onPointClick={selectPoint}
+        />
+      </div>
+      <div className={styles.matchProgress}>
+        <span>
+          {selectedId
+            ? `Point selected — pick its name below.`
+            : done
+              ? "All matched!"
+              : "Tap a numbered point, then tap its name below."}
+        </span>
+        <span>
+          {matchedIds.length} / {points.length}
+        </span>
+      </div>
+      {done ? (
+        <div className={styles.matchDone}>Nice work — every part matched. 🎉</div>
+      ) : (
+        <div className={styles.wordBank}>
+          {wordBank.map((id) => {
+            const isMatched = matchedIds.includes(id);
+            const isWrong = wrongId === id;
+            const cls = [styles.wordChip, isMatched && styles.matched, isWrong && styles.wrong]
+              .filter(Boolean)
+              .join(" ");
+            return (
+              <button key={id} className={cls} disabled={isMatched} onClick={() => attemptTerm(id)}>
+                {termFor(id)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <button className="btn" style={{ marginTop: 12 }} onClick={reset}>
+        Reset
+      </button>
+    </div>
+  );
+}
+
 export default function TopicReference() {
   const { topicId } = useParams<{ topicId: string }>();
   const topic = topicId ? TOPIC_MAP[topicId as TopicId] : undefined;
@@ -151,8 +238,18 @@ export default function TopicReference() {
         </div>
       )}
 
-      {topic.id === "nomenclature" && <LabelPractice variant="hull" points={HULL_LABEL_POINTS} />}
-      {topic.id === "rig" && <LabelPractice variant="rig" points={RIG_LABEL_POINTS} />}
+      {topic.id === "nomenclature" && (
+        <>
+          <LabelPractice variant="hull" points={HULL_LABEL_POINTS} />
+          <LabelMatchGame variant="hull" points={HULL_LABEL_POINTS} />
+        </>
+      )}
+      {topic.id === "rig" && (
+        <>
+          <LabelPractice variant="rig" points={RIG_LABEL_POINTS} />
+          <LabelMatchGame variant="rig" points={RIG_LABEL_POINTS} />
+        </>
+      )}
       {topic.id === "tackingJibing" && <TillerReference />}
       {topic.id === "sailTrim" && <TelltaleReference />}
 
