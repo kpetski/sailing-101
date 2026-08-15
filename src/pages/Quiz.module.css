@@ -1,0 +1,115 @@
+.progressLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.diagramWrap {
+  max-width: 380px;
+  margin: 0 auto 16px;
+}
+
+.prompt {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  white-space: pre-line;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.choiceBtn {
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--paper-card);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.choiceBtn.correct {
+  border-color: var(--good);
+  background: #e4f0ec;
+  color: var(--good);
+  font-weight: bold;
+}
+
+.choiceBtn.incorrect {
+  border-color: var(--bad);
+  background: #f6e8e3;
+  color: var(--bad);
+  font-weight: bold;
+}
+
+.maneuverGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.textForm {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.textInput {
+  flex: 1 1 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.feedback {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.feedback.correct {
+  background: #e4f0ec;
+  border-left: 3px solid var(--good);
+}
+
+.feedback.incorrect {
+  background: #f6e8e3;
+  border-left: 3px solid var(--bad);
+}
+
+.feedbackTitle {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}

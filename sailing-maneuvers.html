@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Maneuver? — Tack, Jibe, Head Up, Fall Off</title>
+<style>
+  :root{
+    --ink:#1c2b30;
+    --paper:#f5f1e6;
+    --deep:#0f3d3e;
+    --teal:#1f6f6b;
+    --rust:#b5533c;
+    --gold:#c8973a;
+    --line:#c9bfa5;
+    --card:#fffdf7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    color:var(--ink);
+    padding:24px 16px 60px;
+  }
+  h1{
+    font-size:1.5rem;
+    text-align:center;
+    margin:4px 0 2px;
+    letter-spacing:0.02em;
+    color:var(--deep);
+  }
+  .sub{
+    text-align:center;
+    color:#5a6b63;
+    font-size:0.92rem;
+    margin-bottom:22px;
+    font-style:italic;
+  }
+  .legend{
+    max-width:640px;
+    margin:0 auto 28px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px 16px;
+    font-size:0.82rem;
+    color:#4a5a52;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .windnote{
+    max-width:560px;
+    margin:0 auto 26px;
+    text-align:center;
+    font-size:0.85rem;
+    line-height:1.5;
+    color:var(--deep);
+    background:#e4ede8;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 16px;
+  }
+  .windnote b{color:var(--rust);}
+  .tiller-card{
+    max-width:560px;
+    margin:0 auto 30px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 18px 16px;
+    box-shadow:0 2px 8px rgba(15,61,62,0.06);
+  }
+  .tiller-title{
+    font-size:0.78rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#8a8168;
+    margin-bottom:10px;
+  }
+  .tiller-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:8px;
+    font-size:0.92rem;
+    line-height:1.4;
+  }
+  .tiller-tag{
+    flex:0 0 auto;
+    font-size:0.78rem;
+    font-weight:bold;
+    color:#fff;
+    padding:3px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .tiller-tag.headup{background:var(--deep);}
+  .tiller-tag.falloff{background:var(--gold);}
+  .tiller-desc{color:var(--ink);}
+  .tiller-note{
+    margin-top:10px;
+    font-size:0.85rem;
+    line-height:1.5;
+    color:#3c4a44;
+    background:#f0ece0;
+    border-left:3px solid var(--gold);
+    padding:8px 12px;
+    border-radius:4px;
+  }
+  .tt-legend-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:space-between;
+  }
+  .tt-example{
+    flex:1 1 140px;
+    min-width:120px;
+    text-align:center;
+  }
+  .tt-svg{
+    width:100%;
+    max-width:100px;
+    height:auto;
+    background:#f7f4ea;
+    border-radius:6px;
+  }
+  .tt-label{
+    font-size:0.8rem;
+    font-weight:bold;
+    margin-top:4px;
+  }
+  .tt-label.good{color:var(--teal);}
+  .tt-label.bad{color:var(--rust);}
+  .tt-caption{
+    font-size:0.75rem;
+    color:#5a6b63;
+    line-height:1.35;
+    margin-top:2px;
+  }
+  .cards{
+    max-width:640px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 16px 18px;
+    box-shadow:0 2px 8px rgba(15,61,62,0.06);
+  }
+  .card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+    gap:10px;
+  }
+  .num{
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    color:#8a8168;
+    text-transform:uppercase;
+  }
+  .answer{
+    font-size:1.05rem;
+    font-weight:bold;
+    padding:3px 12px;
+    border-radius:20px;
+    color:#fff;
+  }
+  .answer.tack{background:var(--teal);}
+  .answer.jibe{background:var(--rust);}
+  .answer.headup{background:var(--deep);}
+  .answer.falloff{background:var(--gold);}
+  .prompt{
+    font-size:0.98rem;
+    line-height:1.45;
+    margin-bottom:10px;
+    color:var(--ink);
+  }
+  svg{
+    display:block;
+    width:100%;
+    height:auto;
+    background:#eef4f0;
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .why{
+    margin-top:10px;
+    font-size:0.88rem;
+    line-height:1.5;
+    color:#3c4a44;
+    background:#f0ece0;
+    border-left:3px solid var(--gold);
+    padding:8px 12px;
+    border-radius:4px;
+  }
+  .why b{color:var(--deep);}
+  details{margin-top:8px;}
+  summary{
+    cursor:pointer;
+    font-size:0.85rem;
+    color:var(--teal);
+    font-weight:bold;
+    user-select:none;
+  }
+  footer{
+    text-align:center;
+    margin-top:30px;
+    font-size:0.78rem;
+    color:#8a8168;
+    font-style:italic;
+  }
+</style>
+</head>
+<body>
+
+<h1>Which Maneuver?</h1>
+<div class="sub">Tack · Jibe · Head Up · Fall Off — worked scenarios</div>
+
+<div class="legend">
+  <span><span class="swatch" style="background:#a9c9c2;"></span>No-Go Zone</span>
+  <span><span class="swatch" style="background:#7fb3ab;"></span>Upwind (close reach → beam reach)</span>
+  <span><span class="swatch" style="background:#3f5c56;"></span>Downwind (broad reach → run)</span>
+  <span><span class="swatch" style="background:#b5533c;"></span>Obstacle</span>
+  <span><span class="swatch" style="background:#c8973a;"></span>Target</span>
+  <span><span class="swatch" style="background:#0f3d3e;border-radius:50%;"></span>Helmsperson (windward side)</span>
+  <span><span class="swatch" style="background:#c8973a;"></span>Wind indicator (shroud telltale)</span>
+</div>
+<div class="windnote">↓ In every diagram, the wind is blowing <b>from the top toward the bottom</b> — the arrow shows the direction it's heading, which is also the direction the No-Go Zone points away from.</div>
+
+<div class="tiller-card">
+  <div class="tiller-title">Tiller Quick Reference</div>
+  <div class="tiller-row">
+    <span class="tiller-tag headup">Head Up</span>
+    <span class="tiller-desc"><b>Push the tiller away</b> from you (toward leeward/the sail) → bow turns toward the wind.</span>
+  </div>
+  <div class="tiller-row">
+    <span class="tiller-tag falloff">Fall Off</span>
+    <span class="tiller-desc"><b>Pull the tiller in</b> toward you (toward windward) → bow turns away from the wind.</span>
+  </div>
+  <div class="tiller-note">This assumes you're sitting on the windward (higher, wind-hitting) side — the usual spot. It's the same push-opposite/pull-same rule you already know from steering: tiller motion is always opposite the direction you want the bow to go. Heading up and falling off are just small versions of that. A <b>tack</b> is the same push (away from you, toward the sail) as heading up — just held hard over, all the way through the wind, instead of a small nudge.</div>
+</div>
+
+<div class="tiller-card">
+  <div class="tiller-title">Reading Jib Telltales</div>
+  <div class="tt-legend-row">
+    <div class="tt-example">
+      <svg viewBox="0 0 100 90" class="tt-svg">
+        <polygon points="50,6 80,80 50,64 20,80" fill="#e4ede8" stroke="#20302c" stroke-width="1.5"/>
+        <line x1="42" y1="18" x2="42" y2="34" stroke="#2f7d8c" stroke-width="1.8"/>
+        <line x1="58" y1="18" x2="58" y2="34" stroke="#2f7d8c" stroke-width="1.8"/>
+      </svg>
+      <div class="tt-label good">Streaming straight back</div>
+      <div class="tt-caption">Both telltales flowing aft = well trimmed. This is the state shown on every boat above.</div>
+    </div>
+    <div class="tt-example">
+      <svg viewBox="0 0 100 90" class="tt-svg">
+        <polygon points="50,6 80,80 50,64 20,80" fill="#e4ede8" stroke="#20302c" stroke-width="1.5"/>
+        <path d="M42,18 Q30,20 26,10" fill="none" stroke="#b5533c" stroke-width="1.8"/>
+        <line x1="58" y1="18" x2="58" y2="34" stroke="#2f7d8c" stroke-width="1.8"/>
+      </svg>
+      <div class="tt-label bad">Inner one flutters/lifts</div>
+      <div class="tt-caption">You're pointed too close to the wind (pinching). Fall off a little, or ease the sheet.</div>
+    </div>
+    <div class="tt-example">
+      <svg viewBox="0 0 100 90" class="tt-svg">
+        <polygon points="50,6 80,80 50,64 20,80" fill="#e4ede8" stroke="#20302c" stroke-width="1.5"/>
+        <line x1="42" y1="18" x2="42" y2="34" stroke="#2f7d8c" stroke-width="1.8"/>
+        <path d="M58,18 Q70,20 74,10" fill="none" stroke="#b5533c" stroke-width="1.8"/>
+      </svg>
+      <div class="tt-label bad">Outer one flutters/lifts</div>
+      <div class="tt-caption">Sail is too loose or you've turned too far away from the wind. Trim in, or head up a little.</div>
+    </div>
+  </div>
+  <div class="tiller-note">Telltale = one small piece of yarn/ribbon on each side of the jib, near the front (luff). Reading them is one of your <b>three key questions</b>: "are my sails trimmed properly?" (Note: this is different from the gold <b>wind indicator</b> shown on each boat above, which is a single telltale on the shroud/mast showing your angle to the wind — straight back near irons, straight out to the side near beam reach.)</div>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<footer>Diagrams are schematic (top-down) — not to scale.</footer>
+
+<script>
+// ---------- Shared SVG helpers ----------
+const NS = "http://www.w3.org/2000/svg";
+const W = 320, H = 340, CX = 160, CY = 185, R = 115;
+
+function polarToXY(deg, radius){
+  // deg: 0 = straight up (wind direction / north), clockwise positive
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: CX + radius * Math.cos(rad), y: CY + radius * Math.sin(rad) };
+}
+
+function normalizeDeg(deg){
+  // wrap any heading into -180..180 range
+  return ((deg + 180) % 360 + 360) % 360 - 180;
+}
+
+function boatIcon(deg, radius, color, label, dashed){
+  // returns svg string for a small boat glyph pointing toward heading `deg`,
+  // plus boom/sail line, helmsperson dot, and jib telltales (all "well trimmed" streaming state)
+  const {x,y} = polarToXY(deg, radius);
+  const rot = deg;
+  const nd = normalizeDeg(deg);
+  // which side is the boom (leeward) on, in the boat's own local frame: +1 = right/local +x, -1 = left/local -x
+  const boomSide = nd > 0.5 ? 1 : (nd < -0.5 ? -1 : 0);
+  const windwardSide = -boomSide; // helmsperson typically sits windward to balance heel
+  // boom angle from centerline: ~0 near close reach (in tight), up to ~90 near a run (eased all the way out)
+  const boomMag = Math.min(88, Math.max(18, Math.abs(nd)));
+  const rad = boomMag * Math.PI / 180;
+  const boomLen = 15;
+  const boomTipX = boomSide * boomLen * Math.sin(rad);
+  const boomTipY = -4 + boomLen * Math.cos(rad);
+
+  const boomLine = boomSide === 0
+    ? `<line x1="0" y1="-4" x2="0" y2="11" stroke="#8a8168" stroke-width="1.5" stroke-dasharray="1.5,2"/>` // luffing/irons: no clean trim
+    : `<line x1="0" y1="-4" x2="${boomTipX.toFixed(1)}" y2="${boomTipY.toFixed(1)}" stroke="#20302c" stroke-width="1.6"/>`;
+
+  const helmDot = `<circle cx="${(windwardSide*6.5).toFixed(1)}" cy="9" r="2.2" fill="#0f3d3e" stroke="#fff" stroke-width="0.6"><title>helmsperson</title></circle>`;
+
+  // wind indicator (shroud/mast telltale): shows your angle to the wind directly.
+  // Streams straight back (aligned with the boat) near irons; straight out to the side near beam reach.
+  const windMag = Math.min(90, Math.abs(nd));
+  const wRad = windMag * Math.PI / 180;
+  const wLen = 12;
+  const wSide = windwardSide === 0 ? 1 : windwardSide;
+  const wTipX = wSide * wLen * Math.sin(wRad);
+  const wTipY = -3 + wLen * Math.cos(wRad);
+  const windIndicator = `
+    <line x1="${(wSide*5).toFixed(1)}" y1="-3" x2="${wTipX.toFixed(1)}" y2="${wTipY.toFixed(1)}" stroke="#c8973a" stroke-width="1.4"/>
+    <circle cx="${wTipX.toFixed(1)}" cy="${wTipY.toFixed(1)}" r="1.4" fill="#c8973a"/>
+  `;
+
+  return `
+    <g transform="translate(${x},${y}) rotate(${rot})">
+      <polygon points="0,-16 8,12 0,7 -8,12" fill="${color}" stroke="#20302c" stroke-width="1"/>
+      <line x1="0" y1="-16" x2="0" y2="10" stroke="#20302c" stroke-width="1" stroke-dasharray="${dashed?'2,2':'0'}"/>
+      ${boomLine}
+      ${windIndicator}
+      ${helmDot}
+    </g>
+    ${label ? `<text x="${x + (Math.sin(rot*Math.PI/180)*30)}" y="${y - (Math.cos(rot*Math.PI/180)*30)}" font-size="11" fill="#20302c" text-anchor="middle" font-family="Georgia,serif">${label}</text>` : ''}
+  `;
+}
+
+function windArrow(){
+  return `
+    <g>
+      <!-- faint dashed guide showing wind's path straight through the circle -->
+      <line x1="${CX}" y1="${CY-R}" x2="${CX}" y2="${CY+R}" stroke="#9ab3ab" stroke-width="1" stroke-dasharray="3,4" opacity="0.6"/>
+      <!-- bold wind arrow, starts above the circle -->
+      <line x1="${CX}" y1="26" x2="${CX}" y2="${CY-R+4}" stroke="#b5533c" stroke-width="5" marker-end="url(#windhead)"/>
+      <text x="${CX}" y="16" font-size="13" font-weight="bold" fill="#b5533c" text-anchor="middle" font-family="Georgia,serif">WIND FROM HERE</text>
+    </g>
+  `;
+}
+
+function noGoZone(){
+  // wedge around top of circle (wind direction); close reach starts right at this edge
+  const a1 = -32, a2 = 32;
+  const p1 = polarToXY(a1, R);
+  const p2 = polarToXY(a2, R);
+  return `<path d="M ${CX} ${CY} L ${p1.x} ${p1.y} A ${R} ${R} 0 0 1 ${p2.x} ${p2.y} Z" fill="#a9c9c2" opacity="0.7"/>`;
+}
+
+function halfShading(){
+  // upper half (close reach..beam reach both sides) lighter teal ring, lower half darker
+  return `
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 1 ${CX+R} ${CY}" fill="none" stroke="#7fb3ab" stroke-width="26" opacity="0.35"/>
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 0 ${CX+R} ${CY}" fill="none" stroke="#3f5c56" stroke-width="26" opacity="0.30"/>
+  `;
+}
+
+function obstacle(deg, radius, r=14){
+  const {x,y} = polarToXY(deg, radius);
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="#b5533c" opacity="0.85"/><text x="${x}" y="${y+4}" font-size="14" text-anchor="middle" fill="#fff">✕</text>`;
+}
+
+function target(deg, radius){
+  const {x,y} = polarToXY(deg, radius);
+  return `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#c8973a" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3" fill="#c8973a"/>`;
+}
+
+function curvedPath(deg1, deg2, radius, color, dashed){
+  // arc path between two angles at given radius, shows turn direction
+  const p1 = polarToXY(deg1, radius);
+  const p2 = polarToXY(deg2, radius);
+  const diff = deg2 - deg1;
+  const sweep = diff > 0 ? 1 : 0;
+  const large = Math.abs(diff) > 180 ? 1 : 0;
+  return `<path d="M ${p1.x} ${p1.y} A ${radius} ${radius} 0 ${large} ${sweep} ${p2.x} ${p2.y}" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="6,5" marker-end="url(#arrowhead-${color.replace('#','')})"/>`;
+}
+
+function svgFrame(innerContent, colorsForMarkers){
+  let markers = colorsForMarkers.map(c => `
+    <marker id="arrowhead-${c.replace('#','')}" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="${c}"/>
+    </marker>
+  `).join('');
+  return `
+  <svg viewBox="0 0 ${W} ${H}" xmlns="${NS}">
+    <defs>
+      <marker id="windhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#b5533c"/>
+      </marker>
+      ${markers}
+    </defs>
+    ${halfShading()}
+    ${noGoZone()}
+    <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#c9bfa5" stroke-width="1"/>
+    ${windArrow()}
+    ${innerContent}
+  </svg>`;
+}
+
+// ---------- Scenario data ----------
+const scenarios = [
+  {
+    title: "Sailing close reach, obstacle dead ahead",
+    answer: "Fall Off", cls:"falloff",
+    prompt: "You're on a close reach on starboard tack (wind on your right, boom out left) — about as close to the wind as your boat sails. Rocks are ahead. You turn away from the wind, staying on the same side the wind is hitting the whole time, ending up on a beam reach.",
+    why: "The wind stays on the <b>same side</b> the whole turn — you never cross through it, and you never leave starboard tack. That means this is <b>not</b> a tack or jibe at all. You've simply <b>fallen off</b> (turned away from the wind), moving from close reach toward beam reach. Sails ease out, no jib-sheet swap, no boom crossing.",
+    svg: () => svgFrame(`
+      ${boatIcon(-45, 78, "#7fb3ab", "start (close reach)", false)}
+      ${obstacle(-50, 108)}
+      ${target(-78, 100)}
+      ${curvedPath(-45, -78, 78, "#c8973a")}
+      ${boatIcon(-78, 78, "#c8973a", "end (beam reach)", true)}
+    `, ["c8973a"])
+  },
+  {
+    title: "Close reach on starboard, need to reach a mark upwind-left",
+    answer: "Tack", cls:"tack",
+    prompt: "You're on a close reach on starboard tack. Your destination is upwind, but on the opposite side — past the No-Go Zone. There's no way to fall off and get there; you must cross through the wind.",
+    why: "Because the target sits on the <b>far side of the No-Go Zone</b>, the only way there is to turn the bow <b>through</b> the wind — that's the definition of a <b>tack</b>. You'll end up on a close reach on <b>port tack</b>, wind now hitting your left side, boom swung to the right.",
+    svg: () => svgFrame(`
+      ${boatIcon(-20, 78, "#7fb3ab", "start (stbd tack)", false)}
+      ${target(20, 100)}
+      ${curvedPath(-20, 20, 78, "#1f6f6b")}
+      ${boatIcon(20, 78, "#1f6f6b", "end (port tack)", true)}
+    `, ["1f6f6b"])
+  },
+  {
+    title: "Running downwind, mark is behind you on the other side",
+    answer: "Jibe", cls:"jibe",
+    prompt: "You're on a run, wind directly behind you, boom out to the left. The mark you need is behind-right — on the other side of straight-downwind.",
+    why: "You're already sailing <b>away</b> from the wind, so there's no No-Go Zone to deal with. To change sides while staying downwind, the <b>stern</b> crosses through the wind instead of the bow — that's a <b>jibe</b>. Watch the boom: it will swing hard from left to right as the stern passes through dead-downwind.",
+    svg: () => svgFrame(`
+      ${boatIcon(160, 78, "#3f5c56", "start", false)}
+      ${target(200, 100)}
+      ${curvedPath(160, 200, 78, "#b5533c")}
+      ${boatIcon(200, 78, "#b5533c", "end", true)}
+    `, ["b5533c"])
+  },
+  {
+    title: "Beam reach, want to point higher to clear a shoal ahead",
+    answer: "Head Up", cls:"headup",
+    prompt: "You're on a beam reach (wind at 90°, boom out to the side). A shallow shoal sits ahead. You want to angle closer to the wind to sail around it without crossing it.",
+    why: "Turning <b>toward</b> the wind (without crossing through it) is called <b>heading up</b>. You move up the wheel toward close reach — as close to the wind as your boat will point. Sails need to be trimmed in tighter as you head up — same side, no maneuver name change, just a course and trim adjustment.",
+    svg: () => svgFrame(`
+      ${boatIcon(90, 78, "#7fb3ab", "start (beam)", false)}
+      ${obstacle(70, 110)}
+      ${target(35, 100)}
+      ${curvedPath(90, 35, 78, "#0f3d3e")}
+      ${boatIcon(35, 78, "#0f3d3e", "end (close reach)", true)}
+    `, ["0f3d3e"])
+  },
+  {
+    title: "Broad reach, wind picking up — want more control, less heel",
+    answer: "Fall Off", cls:"falloff",
+    prompt: "You're on a broad reach and it's gusty — the boat's heeling more than you'd like. You ease the sails and turn slightly away from the wind toward a run.",
+    why: "Turning <b>away</b> from the wind (without fully crossing it to a jibe) is <b>falling off</b>. Moving from broad reach toward a run generally reduces heel and eases pressure on the sails — a common move to depower in a gust, and just a course change, not a jibe, since you stayed on the same side.",
+    svg: () => svgFrame(`
+      ${boatIcon(150, 78, "#3f5c56", "start (broad)", false)}
+      ${target(172, 100)}
+      ${curvedPath(150, 172, 78, "#c8973a")}
+      ${boatIcon(172, 78, "#c8973a", "end (run)", true)}
+    `, ["c8973a"])
+  },
+  {
+    title: "Close reach on starboard tack, destination is far upwind on the right",
+    answer: "Tack", cls:"tack",
+    prompt: "You're close reaching on starboard tack (wind on right, boom out left). Your destination is upwind and to the right — past where you can point without hitting the No-Go Zone.",
+    why: "Any time the target is on the <b>opposite side of the No-Go Zone</b> from where you're currently pointed, and you're on the upwind half of the wheel, you'll need to <b>tack</b> — turning the bow through the wind — to eventually get there, often across multiple tacks in a zigzag.",
+    svg: () => svgFrame(`
+      ${boatIcon(-40, 78, "#7fb3ab", "start (stbd tack)", false)}
+      ${target(40, 105)}
+      ${curvedPath(-40, 40, 78, "#1f6f6b")}
+      ${boatIcon(40, 78, "#1f6f6b", "end (port tack)", true)}
+    `, ["1f6f6b"])
+  }
+];
+
+const container = document.getElementById('cards');
+scenarios.forEach((s, i) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-head">
+      <span class="num">Scenario ${i+1}</span>
+      <span class="answer ${s.cls}">${s.answer}</span>
+    </div>
+    <div class="prompt"><b>${s.title}.</b> ${s.prompt}</div>
+    ${s.svg()}
+    <details>
+      <summary>Why?</summary>
+      <div class="why">${s.why}</div>
+    </details>
+  `;
+  container.appendChild(card);
+});
+</script>
+</body>
+</html>

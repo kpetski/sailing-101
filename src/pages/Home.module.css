@@ -1,0 +1,97 @@
+.hero {
+  text-align: center;
+  margin: 8px 0 24px;
+}
+
+.hero p {
+  color: var(--muted);
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+
+.topicGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .topicGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.topicCard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.topicCard h3 {
+  font-size: 0.98rem;
+  margin-bottom: 4px;
+}
+
+.topicCard p {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.quizButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.progressLabel {
+  flex: 0 0 auto;
+  width: 150px;
+  color: var(--muted-strong);
+}
+
+.progressTrack {
+  flex: 1 1 auto;
+  height: 8px;
+  background: #e4ede8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 6px;
+}
+
+.progressPct {
+  flex: 0 0 auto;
+  width: 42px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.emptyState {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-style: italic;
+}
