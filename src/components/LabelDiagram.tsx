@@ -26,18 +26,18 @@ export const HULL_LABEL_POINTS: LabelPoint[] = [
 ];
 
 export const RIG_LABEL_POINTS: LabelPoint[] = [
-  { id: "mast", x: 150, y: 180 },
-  { id: "boom", x: 195, y: 325 },
-  { id: "spreader", x: 150, y: 110 },
-  { id: "mainsail", x: 178, y: 230 },
-  { id: "jib", x: 95, y: 265 },
-  { id: "forestay", x: 96, y: 195 },
-  { id: "backstay", x: 203, y: 195 },
-  { id: "shrouds", x: 178, y: 260 },
+  { id: "mast", x: 755, y: 480 },
+  { id: "boom", x: 420, y: 968 },
+  { id: "spreader", x: 700, y: 300 },
+  { id: "mainsail", x: 480, y: 560 },
+  { id: "jib", x: 860, y: 650 },
+  { id: "forestay", x: 830, y: 330 },
+  { id: "backstay", x: 420, y: 480 },
+  { id: "shrouds", x: 620, y: 640 },
 ];
 
 const HULL_VIEWBOX = "0 0 500 270";
-const RIG_VIEWBOX = "0 0 300 380";
+const RIG_VIEWBOX = "0 0 1201 1280";
 
 function HullArt() {
   return (
@@ -87,33 +87,25 @@ function HullArt() {
   );
 }
 
+/**
+ * Real illustration (Pixabay Content License — free for public/commercial
+ * use, no attribution required, modification/redistribution permitted;
+ * https://pixabay.com/service/license-summary/), credited in README.md.
+ * The source drawing doesn't include a spreader, backstay, or shrouds (it's
+ * a simple daysailer rig), so those three are added here as an overlay in a
+ * matching line style — everything else (mast, boom, mainsail, jib,
+ * forestay) is the original illustration.
+ */
 function RigArt() {
   return (
     <>
-      <path d="M40,335 Q150,357 260,335 L246,347 Q150,364 54,347 Z" fill="#e4ede8" stroke="#20302c" strokeWidth={2} />
-      <line x1={150} y1={330} x2={150} y2={35} stroke="#20302c" strokeWidth={4} strokeLinecap="round" />
-      <line x1={150} y1={40} x2={50} y2={335} stroke="#20302c" strokeWidth={2} />
-      <line x1={150} y1={40} x2={250} y2={335} stroke="#20302c" strokeWidth={2} />
-      <line x1={150} y1={112} x2={198} y2={335} stroke="#20302c" strokeWidth={1.6} />
-      <line x1={128} y1={104} x2={150} y2={110} stroke="#20302c" strokeWidth={3} strokeLinecap="round" />
-      <line x1={150} y1={110} x2={172} y2={104} stroke="#20302c" strokeWidth={3} strokeLinecap="round" />
-      <line x1={150} y1={325} x2={235} y2={325} stroke="#20302c" strokeWidth={3} strokeLinecap="round" />
-      {/* mainsail, with a slightly curved (roached) leech rather than a straight line */}
-      <path
-        d="M150,60 C185,150 220,240 235,325 L150,325 Z"
-        fill="#c8d9d2"
-        fillOpacity={0.85}
-        stroke="#1f6f6b"
-        strokeWidth={1.5}
-      />
-      {/* jib, with a gently curved leech too */}
-      <path
-        d="M150,90 C120,175 85,260 50,335 L150,325 Z"
-        fill="#dbe6df"
-        fillOpacity={0.85}
-        stroke="#1f6f6b"
-        strokeWidth={1.5}
-      />
+      <image href={`${import.meta.env.BASE_URL}diagrams/sailboat-rig.png`} x={0} y={0} width={1201} height={1280} />
+      {/* spreader — added: a strut crossing the mast partway up */}
+      <line x1={655} y1={300} x2={855} y2={300} stroke="#20302c" strokeWidth={5} strokeLinecap="round" />
+      {/* shroud — added: mast (at spreader height) down to a mid-deck chainplate; dashed to read as "behind" the sail */}
+      <line x1={745} y1={305} x2={560} y2={975} stroke="#20302c" strokeWidth={2} strokeDasharray="10,6" opacity={0.75} />
+      {/* backstay — added: masthead down to the stern; dashed to read as "behind" the sail */}
+      <line x1={752} y1={30} x2={230} y2={945} stroke="#20302c" strokeWidth={2} strokeDasharray="10,6" opacity={0.75} />
     </>
   );
 }
@@ -149,7 +141,7 @@ export default function LabelDiagram({
   className,
 }: LabelDiagramProps) {
   const visiblePoints = activeId ? points.filter((p) => p.id === activeId) : points;
-  const viewBoxWidth = variant === "hull" ? 500 : 300;
+  const viewBoxWidth = variant === "hull" ? 500 : 1201;
 
   return (
     <svg
@@ -169,7 +161,8 @@ export default function LabelDiagram({
         const revealed = revealedIds?.includes(p.id) || matchedIds?.includes(p.id);
         const isActive = activeId === p.id;
         const isSelected = selectedId === p.id;
-        const number = i + 1;
+        {/* Letters, not numbers — the rig photo has its own baked-in numbered callouts (1-30) that digits would collide with. */}
+        const marker = String.fromCharCode(65 + i);
         const fill = revealed ? "#1f6f6b" : isActive || isSelected ? "#b5533c" : "#c8973a";
         return (
           <g key={p.id}>
@@ -200,7 +193,7 @@ export default function LabelDiagram({
                 fontFamily="Georgia,serif"
                 style={{ pointerEvents: "none" }}
               >
-                {number}
+                {marker}
               </text>
             )}
             {revealed && labelFor && (

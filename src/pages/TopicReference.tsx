@@ -193,7 +193,7 @@ function LabelMatchGame({ variant, points }: { variant: "hull" | "rig"; points: 
             ? `Point selected — pick its name below.`
             : done
               ? "All matched!"
-              : "Tap a numbered point, then tap its name below."}
+              : "Tap a lettered point, then tap its name below."}
         </span>
         <span>
           {matchedIds.length} / {points.length}
