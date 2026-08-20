@@ -35,6 +35,9 @@ export const TOPICS: Topic[] = [
     id: "dockingCOB",
     title: "Docking & Crew Overboard",
     blurb: "Leaving the dock, mooring basics, and crew-overboard recovery.",
+    // Not reviewed against the actual course material yet — keep it out of
+    // the UI and quiz pool until it's checked against what's actually taught.
+    hidden: true,
   },
   {
     id: "threeKeyQuestions",
@@ -46,3 +49,6 @@ export const TOPICS: Topic[] = [
 export const TOPIC_MAP: Record<TopicId, Topic> = Object.fromEntries(
   TOPICS.map((t) => [t.id, t])
 ) as Record<TopicId, Topic>;
+
+/** Topics to actually show — everywhere a topic list is rendered should use this, not TOPICS. */
+export const VISIBLE_TOPICS: Topic[] = TOPICS.filter((t) => !t.hidden);

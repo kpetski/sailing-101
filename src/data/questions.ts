@@ -1,4 +1,5 @@
 import { TERMS } from "./terms";
+import { TOPIC_MAP } from "./topics";
 import { HULL_LABEL_POINTS, RIG_LABEL_POINTS } from "../components/LabelDiagram";
 import { SKIPPER_VIEW_POINTS } from "../components/SkipperView";
 import type {
@@ -657,4 +658,4 @@ export const QUESTIONS: Question[] = [
   ...RIGHT_OF_WAY_QUESTIONS,
   ...NAV_MANEUVER_QUESTIONS,
   ...NAV_ROUTE_QUESTIONS,
-];
+].filter((q) => !TOPIC_MAP[q.topic]?.hidden);

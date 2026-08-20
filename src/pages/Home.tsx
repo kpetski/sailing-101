@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { TOPICS } from "../data/topics";
+import { VISIBLE_TOPICS as TOPICS } from "../data/topics";
 import { GAMES } from "../data/games";
 import { QUESTIONS } from "../data/questions";
 import { useQuizProgress } from "../hooks/useQuizProgress";

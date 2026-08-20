@@ -16,6 +16,8 @@ export interface Topic {
   id: TopicId;
   title: string;
   blurb: string;
+  /** Excluded from topic lists and quiz pools — content still exists but isn't ready to show. */
+  hidden?: boolean;
 }
 
 /** A single term/definition pair used on reference pages and in recall questions. */
