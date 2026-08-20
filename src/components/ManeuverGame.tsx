@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { MANEUVER_LABELS, type Maneuver } from "./PointsOfSailDiagram";
+import { shuffle } from "../lib/shuffle";
 
 /**
  * Drag-the-telltale practice: given a current point of sail and a target
@@ -21,7 +22,6 @@ const HULL = "M84,174 L116,174 Q122,146 100,122 Q78,146 84,174 Z";
 const STERN_X = 100;
 const STERN_Y = 174;
 const PRESETS = [0, -45, 45, -90, 90, -135, 135, 180] as const;
-const ROUND_SIZE = 6;
 
 const TRIM_STOPS: [number, number][] = [
   [0, 0],
@@ -120,10 +120,12 @@ function buildScenario(id: string, startHeading: number, targetHeading: number):
   return { id, startHeading, targetHeading, ...classifyTurn(startHeading, targetHeading) };
 }
 
-// One point of sail at a time.
+// One point of sail at a time. A run never appears here (start or target):
+// it's not really "on" one tack or the other, so the diagram has to pick an
+// arbitrary side to draw the boom on, which reads as a fake tack to cross.
 const EASY_PAIRS: [number, number][] = [
   [-90, -45],
-  [135, 180],
+  [90, 135],
   [90, 45],
   [-90, -135],
   [-45, 45],
@@ -133,14 +135,14 @@ const EASY_PAIRS: [number, number][] = [
 // Two or three points at once — the telltale has to travel real distance,
 // and the maneuver name has to describe the whole turn, not just the end of it.
 const HARD_PAIRS: [number, number][] = [
-  [-45, 180],
-  [180, -45],
+  [-45, -135],
+  [135, 45],
   [90, -45],
   [-90, 45],
   [45, -90],
   [-90, 135],
   [90, -135],
-  [45, 180],
+  [45, 135],
 ];
 
 const BASIC_SCENARIOS: Scenario[] = EASY_PAIRS.map(([s, t], i) => buildScenario(`easy-${i}`, s, t));
@@ -149,12 +151,7 @@ const ADVANCED_SCENARIOS: Scenario[] = HARD_PAIRS.map(([s, t], i) => buildScenar
 type Mode = "easy" | "hard";
 
 function poolFor(mode: Mode): Scenario[] {
-  return mode === "easy" ? BASIC_SCENARIOS : [...BASIC_SCENARIOS, ...ADVANCED_SCENARIOS];
-}
-
-function pickScenario(pool: Scenario[], excludeId: string | null): Scenario {
-  const choices = excludeId ? pool.filter((s) => s.id !== excludeId) : pool;
-  return choices[Math.floor(Math.random() * choices.length)];
+  return mode === "easy" ? BASIC_SCENARIOS : ADVANCED_SCENARIOS;
 }
 
 /**
@@ -328,7 +325,11 @@ interface FieldResult {
 
 export default function ManeuverGame() {
   const [mode, setMode] = useState<Mode>("easy");
-  const [scenario, setScenario] = useState<Scenario>(() => pickScenario(poolFor("easy"), null));
+  // A shuffled, fixed-length pass through the current mode's whole pool —
+  // same "question X of N" shape as the regular quizzes, not an open-ended draw.
+  const [questions, setQuestions] = useState<Scenario[]>(() => shuffle(poolFor("easy")));
+  const [index, setIndex] = useState(0);
+  const scenario = questions[index];
   const [userHeading, setUserHeading] = useState(scenario.startHeading);
   const [userTiller, setUserTiller] = useState<string | null>(null);
   const [tillerSide, setTillerSide] = useState<-1 | 0 | 1>(0);
@@ -336,13 +337,12 @@ export default function ManeuverGame() {
   const [userManeuver, setUserManeuver] = useState<Maneuver | null>(null);
   const [crewSide, setCrewSide] = useState<-1 | 0 | 1>(() => windwardOf(scenario.startHeading));
   const [submitted, setSubmitted] = useState(false);
-  const [roundCorrect, setRoundCorrect] = useState(0);
-  const [roundAttempted, setRoundAttempted] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [finished, setFinished] = useState(false);
 
   const needsSheet = scenario.sheet !== null;
   const expectedCrew = windwardOf(scenario.targetHeading);
   const canCheck = userTiller !== null && userManeuver !== null && (!needsSheet || userSheet !== null);
-  const roundComplete = roundAttempted >= ROUND_SIZE;
 
   function results(): FieldResult[] {
     const out: FieldResult[] = [
@@ -359,21 +359,19 @@ export default function ManeuverGame() {
     if (!canCheck) return;
     setSubmitted(true);
     const allOk = results().every((r) => r.ok);
-    setRoundAttempted((n) => n + 1);
-    if (allOk) setRoundCorrect((n) => n + 1);
+    if (allOk) setCorrectCount((n) => n + 1);
   }
 
-  // "Toward you" means toward the windward rail you're on *right now* — frozen
-  // at the moment you drag, so moving the crew dot afterward (e.g. finishing a
-  // tack) doesn't retroactively change what you already answered.
+  // "Toward you" is toward wherever the skipper dot currently is — evaluated
+  // live, so if you move the dot first and then set the tiller relative to
+  // your new seat, that's what gets graded.
   function handleTillerSideChange(side: -1 | 1) {
     setTillerSide(side);
     const windwardNow = (crewSide || 1) as -1 | 1;
     setUserTiller(side === windwardNow ? "Pull Tiller Toward You" : "Push Tiller Away");
   }
 
-  function startScenario(s: Scenario) {
-    setScenario(s);
+  function loadQuestion(s: Scenario) {
     setUserHeading(s.startHeading);
     setUserTiller(null);
     setTillerSide(0);
@@ -384,14 +382,23 @@ export default function ManeuverGame() {
   }
 
   function startRound(newMode: Mode) {
+    const shuffled = shuffle(poolFor(newMode));
     setMode(newMode);
-    setRoundCorrect(0);
-    setRoundAttempted(0);
-    startScenario(pickScenario(poolFor(newMode), null));
+    setQuestions(shuffled);
+    setIndex(0);
+    setCorrectCount(0);
+    setFinished(false);
+    loadQuestion(shuffled[0]);
   }
 
   function next() {
-    startScenario(pickScenario(poolFor(mode), scenario.id));
+    if (index + 1 >= questions.length) {
+      setFinished(true);
+      return;
+    }
+    const nextIndex = index + 1;
+    setIndex(nextIndex);
+    loadQuestion(questions[nextIndex]);
   }
 
   const fieldResults = submitted ? results() : null;
@@ -428,32 +435,28 @@ export default function ManeuverGame() {
           Mode
         </span>
         <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("easy") }} onClick={() => mode !== "easy" && startRound("easy")}>
-          Easy · 1 point of sail
+          Easy · {BASIC_SCENARIOS.length} questions
         </button>
         <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("hard") }} onClick={() => mode !== "hard" && startRound("hard")}>
-          Hard · 1+ points of sail
+          Hard · {ADVANCED_SCENARIOS.length} questions, multi-point turns
         </button>
-        {!roundComplete && (
+        {!finished && (
           <span style={{ marginLeft: "auto", fontSize: "0.78rem", color: "var(--muted)" }}>
-            Question {roundAttempted + 1} of {ROUND_SIZE}
+            Question {index + 1} of {questions.length}
           </span>
         )}
       </div>
 
-      {roundComplete ? (
+      {finished ? (
         <div className="callout" style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 6 }}>Round complete!</div>
+          <div style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 6 }}>Results</div>
           <div style={{ marginBottom: 14 }}>
-            {roundCorrect} / {ROUND_SIZE} fully correct
+            {correctCount} / {questions.length} fully correct (
+            {Math.round((correctCount / questions.length) * 100)}%)
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="btn btn-primary" onClick={() => startRound(mode)}>
-              Play Again
-            </button>
-            <button className="btn" onClick={() => startRound(mode === "easy" ? "hard" : "easy")}>
-              {mode === "easy" ? "Try Hard Mode →" : "Back to Easy Mode"}
-            </button>
-          </div>
+          <button className="btn btn-primary" onClick={() => startRound(mode)}>
+            Retake
+          </button>
         </div>
       ) : (
         <>
@@ -542,14 +545,10 @@ export default function ManeuverGame() {
                 </div>
               </div>
               <button className="btn btn-primary btn-block" onClick={next}>
-                Next Question →
+                {index + 1 >= questions.length ? "See results →" : "Next Question →"}
               </button>
             </>
           )}
-
-          <div style={{ marginTop: 12, fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>
-            {roundCorrect} / {roundAttempted} fully correct this round
-          </div>
         </>
       )}
     </div>
