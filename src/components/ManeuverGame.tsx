@@ -120,16 +120,27 @@ function buildScenario(id: string, startHeading: number, targetHeading: number):
   return { id, startHeading, targetHeading, ...classifyTurn(startHeading, targetHeading) };
 }
 
-// One point of sail at a time. A run never appears here (start or target):
-// it's not really "on" one tack or the other, so the diagram has to pick an
-// arbitrary side to draw the boom on, which reads as a fake tack to cross.
+// Every single-move variation among the 6 real points of sail (Close/Beam/
+// Broad Reach on each tack) — every adjacent head-up/fall-off step both
+// ways, plus the two mirror crossings (Close-to-Close is a tack, Broad-to-
+// Broad is a jibe). Beam-to-Beam is left out: it's exactly as far via irons
+// as via the run, so which maneuver that "should" be is a coin flip. A run
+// never appears here either — it's not really "on" one tack or the other,
+// so the diagram has to pick an arbitrary side to draw the boom on, which
+// reads as a fake tack to cross.
 const EASY_PAIRS: [number, number][] = [
+  [-45, -90],
   [-90, -45],
-  [90, 135],
-  [90, 45],
   [-90, -135],
+  [-135, -90],
+  [45, 90],
+  [90, 45],
+  [90, 135],
+  [135, 90],
   [-45, 45],
+  [45, -45],
   [135, -135],
+  [-135, 135],
 ];
 
 // Two or three points at once — the telltale has to travel real distance,
