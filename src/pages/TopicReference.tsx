@@ -6,7 +6,6 @@ import type { TopicId } from "../data/types";
 import PointsOfSailDiagram from "../components/PointsOfSailDiagram";
 import LabelDiagram, { HULL_LABEL_POINTS, RIG_LABEL_POINTS, type LabelPoint } from "../components/LabelDiagram";
 import PhotoLabelStudio from "../components/PhotoLabelStudio";
-import DirectionDrill from "../components/DirectionDrill";
 import { SkipperViewIcon, SKIPPER_VIEW_POINTS } from "../components/SkipperView";
 import { shuffle } from "../lib/shuffle";
 import styles from "./TopicReference.module.css";
@@ -287,7 +286,10 @@ export default function TopicReference() {
           <PhotoLabelStudio variant="hull" terms={pointsToTerms(HULL_LABEL_POINTS)} />
           <LabelPractice variant="hull" points={HULL_LABEL_POINTS} />
           <LabelMatchGame variant="hull" points={HULL_LABEL_POINTS} />
-          <DirectionDrill />
+          <div className="callout" style={{ marginBottom: 20 }}>
+            Want it more hands-on? <Link to="/games/directionDrill">Direction Drill</Link> calls out bow, stern,
+            port, and starboard for you to react to — in the Games section.
+          </div>
         </>
       )}
       {topic.id === "rig" && (
@@ -302,6 +304,10 @@ export default function TopicReference() {
         <>
           <TelltaleReference />
           <SkipperViewReference />
+          <div className="callout" style={{ marginBottom: 20 }}>
+            Ready to put it together? <Link to="/games/maneuverPractice">Maneuver Practice</Link> has you drag
+            the telltale, call the tiller and sheet, and name the move — in the Games section.
+          </div>
         </>
       )}
 

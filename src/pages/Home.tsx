@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { TOPICS } from "../data/topics";
+import { GAMES } from "../data/games";
 import { QUESTIONS } from "../data/questions";
 import { useQuizProgress } from "../hooks/useQuizProgress";
 import { DIAGRAM_TYPES, dedupeCrossTopic } from "./Quiz";
@@ -95,6 +96,18 @@ export default function Home() {
               ))}
             </div>
           </details>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionTitle}>Games</div>
+        <div className={styles.topicGrid}>
+          {GAMES.map((game) => (
+            <Link key={game.id} to={`/games/${game.id}`} className={`card ${styles.topicCard}`}>
+              <h3>{game.title}</h3>
+              <p>{game.blurb}</p>
+            </Link>
+          ))}
         </div>
       </section>
 

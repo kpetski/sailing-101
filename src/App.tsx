@@ -2,6 +2,7 @@ import { HashRouter, Link, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import TopicReference from "./pages/TopicReference";
 import Quiz from "./pages/Quiz";
+import GamePage from "./pages/GamePage";
 import "./App.css";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/reference/:topicId" element={<TopicReference />} />
+          <Route path="/games/:gameId" element={<GamePage />} />
           <Route path="/quiz" element={<Quiz />} />
         </Routes>
       </main>
