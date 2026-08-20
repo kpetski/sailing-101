@@ -4,16 +4,20 @@ import { useId } from "react";
  * Wheel geometry + wind-angle math ported directly from the original
  * sailing-maneuvers.html reference implementation. Angles are "wheel degrees":
  * 0 = pointing dead upwind (into the No-Go Zone), positive = clockwise
- * (starboard tack side), negative = counter-clockwise (port tack side),
- * ±180 = dead downwind (run).
+ * (port tack side), negative = counter-clockwise (starboard tack side),
+ * ±180 = dead downwind (run). (In a bow-up bird's-eye view, local +x is the
+ * boat's own starboard side; rotating the bow clockwise swings the stern
+ * around such that the wind ends up over the port side — hence positive
+ * heading = port tack.)
  */
-const VIEW_W = 320;
+const VIEW_W = 400;
 const VIEW_H = 340;
-const CX = 160;
+const CX = 200;
 const CY = 185;
 const WHEEL_R = 115;
 const BOAT_R = 78;
 const MARKER_R = 104;
+const LABEL_R = 106;
 
 function polarToXY(deg: number, radius: number) {
   const rad = ((deg - 90) * Math.PI) / 180;
@@ -22,6 +26,31 @@ function polarToXY(deg: number, radius: number) {
 
 function normalizeDeg(deg: number) {
   return (((deg + 180) % 360) + 360) % 360 - 180;
+}
+
+/**
+ * How far the mainsail's camber control point swings out, by angle off the
+ * wind (0 = irons, 180 = run). Hand-tuned at each named point of sail
+ * rather than a smooth power curve — a curve steep enough to keep close
+ * reach tucked inside the hull outline pushes the run-heading control
+ * point so far out it loops back across the hull's own stroke, which reads
+ * as a rendering glitch rather than "sails eased all the way out."
+ */
+const MAIN_TRIM_STOPS: [number, number][] = [
+  [0, 0],
+  [45, 5],
+  [90, 11],
+  [135, 16],
+  [180, 20],
+];
+
+function trimMagnitude(absNd: number) {
+  for (let i = 1; i < MAIN_TRIM_STOPS.length; i++) {
+    const [x0, y0] = MAIN_TRIM_STOPS[i - 1];
+    const [x1, y1] = MAIN_TRIM_STOPS[i];
+    if (absNd <= x1) return y0 + ((absNd - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return MAIN_TRIM_STOPS[MAIN_TRIM_STOPS.length - 1][1];
 }
 
 export type Maneuver = "tack" | "jibe" | "headUp" | "fallOff";
@@ -67,6 +96,17 @@ export interface PointsOfSailDiagramProps {
   className?: string;
 }
 
+/**
+ * Simplified top-down hull: flat transom, curved bow — matching the
+ * classroom whiteboard sketch rather than a detailed rigged boat. A mast
+ * line splits the hull into the jib (forward) and mainsail (aft) zones,
+ * each with a camber curve leaning to whichever side is leeward. The sails
+ * sheet in tight near the No-Go Zone and progressively ease out (further
+ * lateral swing) approaching a run, mirroring how you'd actually trim
+ * them — not just a fixed lean. A small dot on the windward (higher) rail
+ * marks the helmsperson's seat, the usual reference point for judging
+ * which way to move the tiller.
+ */
 function BoatIcon({
   deg,
   color,
@@ -81,92 +121,65 @@ function BoatIcon({
   const { x, y } = polarToXY(deg, BOAT_R);
   const rot = deg;
   const nd = normalizeDeg(deg);
-  // which side is the boom (leeward) on, in the boat's own local frame
-  const boomSide = nd > 0.5 ? 1 : nd < -0.5 ? -1 : 0;
-  const windwardSide = -boomSide;
-  const boomMag = Math.min(88, Math.max(18, Math.abs(nd)));
-  const rad = (boomMag * Math.PI) / 180;
-  const boomLen = 15;
-  const boomTipX = boomSide * boomLen * Math.sin(rad);
-  const boomTipY = -4 + boomLen * Math.cos(rad);
+  // which side the sails belly out toward (leeward), in the boat's own local frame
+  const lean = nd > 0.5 ? 1 : nd < -0.5 ? -1 : 0;
+  const windwardSide = -lean;
 
-  const windMag = Math.min(90, Math.abs(nd));
-  const wRad = (windMag * Math.PI) / 180;
-  const wLen = 12;
-  const wSide = windwardSide === 0 ? 1 : windwardSide;
-  const wTipX = wSide * wLen * Math.sin(wRad);
-  const wTipY = -3 + wLen * Math.cos(wRad);
+  // Trimmed in tight (sails tucked inside the hull outline) near dead
+  // upwind, easing progressively past the rail as you bear away — just
+  // outside the hull by a beam reach, well outside by a broad reach, and
+  // all the way out at a run.
+  const mainMag = trimMagnitude(Math.abs(nd));
+  const jibOut = lean * mainMag * 0.7;
+  const mainOut = lean * mainMag;
 
-  const labelPos = {
-    x: x + Math.sin((rot * Math.PI) / 180) * 30,
-    y: y - Math.cos((rot * Math.PI) / 180) * 30,
-  };
+  // Offset radially out from wheel center (not along the boat's own
+  // heading) so labels clear the hull regardless of rotation — a beam
+  // reach boat is "wide" in the tangential direction, which a
+  // heading-relative offset doesn't account for.
+  const labelPos = polarToXY(deg, LABEL_R);
+  const labelAnchor = labelPos.x < CX - 2 ? "end" : labelPos.x > CX + 2 ? "start" : "middle";
 
   return (
     <>
       <g transform={`translate(${x},${y}) rotate(${rot})`}>
-        <polygon
-          points="0,-16 8,12 0,7 -8,12"
+        <path
+          d="M -8,11 L 8,11 Q 11,-3 0,-15 Q -11,-3 -8,11 Z"
           fill={color}
           stroke="#20302c"
-          strokeWidth={1}
-        />
-        <line
-          x1={0}
-          y1={-16}
-          x2={0}
-          y2={10}
-          stroke="#20302c"
-          strokeWidth={1}
+          strokeWidth={1.2}
           strokeDasharray={dashed ? "2,2" : "0"}
         />
-        {boomSide === 0 ? (
-          <line
-            x1={0}
-            y1={-4}
-            x2={0}
-            y2={11}
-            stroke="#8a8168"
-            strokeWidth={1.5}
-            strokeDasharray="1.5,2"
-          />
-        ) : (
-          <line
-            x1={0}
-            y1={-4}
-            x2={boomTipX.toFixed(1)}
-            y2={boomTipY.toFixed(1)}
-            stroke="#20302c"
-            strokeWidth={1.6}
-          />
-        )}
-        <line
-          x1={(wSide * 5).toFixed(1)}
-          y1={-3}
-          x2={wTipX.toFixed(1)}
-          y2={wTipY.toFixed(1)}
-          stroke="#c8973a"
-          strokeWidth={1.4}
+        {/* mast, dividing jib (forward) from mainsail (aft) */}
+        <line x1={0} y1={-14} x2={0} y2={9} stroke="#20302c" strokeWidth={1} opacity={0.55} />
+        {/* jib */}
+        <path
+          d={`M 0,-12 Q ${jibOut.toFixed(1)},-6 0,-2`}
+          fill="none"
+          stroke="#20302c"
+          strokeWidth={1.3}
+          opacity={0.85}
         />
-        <circle cx={wTipX.toFixed(1)} cy={wTipY.toFixed(1)} r={1.4} fill="#c8973a" />
-        <circle
-          cx={(windwardSide * 6.5).toFixed(1)}
-          cy={9}
-          r={2.2}
-          fill="#0f3d3e"
-          stroke="#fff"
-          strokeWidth={0.6}
-        >
+        {/* mainsail */}
+        <path
+          d={`M 0,-1 Q ${mainOut.toFixed(1)},4 0,9`}
+          fill="none"
+          stroke="#20302c"
+          strokeWidth={1.3}
+          opacity={0.85}
+        />
+        {/* helmsperson, seated on the windward (higher) rail */}
+        <circle cx={windwardSide * 5} cy={7} r={2} fill="#0f3d3e" stroke="#fff" strokeWidth={0.6}>
           <title>helmsperson</title>
         </circle>
       </g>
       {label && (
         <text
           x={labelPos.x}
-          y={labelPos.y}
+          y={labelPos.y + 4}
           fontSize={11}
           fill="#20302c"
-          textAnchor="middle"
+          textAnchor={labelAnchor}
           fontFamily="Georgia,serif"
         >
           {label}
@@ -193,7 +206,7 @@ function WindArrow() {
         x1={CX}
         y1={26}
         x2={CX}
-        y2={CY - WHEEL_R + 4}
+        y2={CY - WHEEL_R - 8}
         stroke="#b5533c"
         strokeWidth={5}
         markerEnd="url(#windhead)"

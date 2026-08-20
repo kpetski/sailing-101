@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { TOPICS } from "../data/topics";
 import { QUESTIONS } from "../data/questions";
 import { useQuizProgress } from "../hooks/useQuizProgress";
+import { DIAGRAM_TYPES, dedupeCrossTopic } from "./Quiz";
 import styles from "./Home.module.css";
 
 export default function Home() {
@@ -10,6 +11,10 @@ export default function Home() {
 
   const missedCount = progress.missed.length;
   const totalAttempted = Object.values(progress.scores).reduce((sum, s) => sum + (s?.attempted ?? 0), 0);
+  // Counts must match what the quiz pool actually contains once cross-topic
+  // duplicates (see dedupeCrossTopic in Quiz.tsx) are collapsed.
+  const diagramCount = dedupeCrossTopic(QUESTIONS.filter((q) => DIAGRAM_TYPES.has(q.type))).length;
+  const skipperCount = dedupeCrossTopic(QUESTIONS.filter((q) => q.type === "skipperView")).length;
 
   function startQuiz(topic: string) {
     navigate(`/quiz?topic=${topic}`);
@@ -17,6 +22,14 @@ export default function Home() {
 
   function reviewMissed() {
     navigate(`/quiz?mode=missed`);
+  }
+
+  function startDiagramsQuiz() {
+    navigate(`/quiz?mode=diagrams`);
+  }
+
+  function startSkipperQuiz() {
+    navigate(`/quiz?mode=skipperView`);
   }
 
   return (
@@ -58,6 +71,12 @@ export default function Home() {
         <div className={styles.quizButtons}>
           <button className="btn btn-primary btn-block" onClick={() => startQuiz("all")}>
             Quiz me on everything ({QUESTIONS.length} questions)
+          </button>
+          <button className="btn btn-block" onClick={startDiagramsQuiz}>
+            Diagrams only — points of sail, turning, telltales ({diagramCount} questions)
+          </button>
+          <button className="btn btn-block" onClick={startSkipperQuiz}>
+            Wind indicator practice — every point of sail, both tacks ({skipperCount} questions)
           </button>
           {missedCount > 0 && (
             <button className="btn btn-block" onClick={reviewMissed}>

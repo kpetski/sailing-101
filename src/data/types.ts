@@ -1,5 +1,6 @@
 import type { BoatSpec, Maneuver, TurnArcSpec } from "../components/PointsOfSailDiagram";
 import type { LabelPoint } from "../components/LabelDiagram";
+import type { LakeBoat, LakeDock, LakeMark, LakeRoute } from "../components/LakeMap";
 
 export type TopicId =
   | "nomenclature"
@@ -64,7 +65,7 @@ export interface PointOfSailQuestion {
 }
 
 export const POINT_OF_SAIL_CHOICES = [
-  "No-Go Zone",
+  "Irons (No-Go Zone)",
   "Close Reach",
   "Beam Reach",
   "Broad Reach",
@@ -84,4 +85,163 @@ export interface LabelQuestion {
   activeId: string;
 }
 
-export type Question = RecallQuestion | ManeuverQuestion | PointOfSailQuestion | LabelQuestion;
+/**
+ * "What point of sail matches this wind-indicator angle?" — the skipper's-eye
+ * view (fixed boat, rotating indicator) rather than the aerial wheel. Always
+ * rendered with the fixed POINT_OF_SAIL_CHOICES, same as PointOfSailQuestion.
+ */
+export interface SkipperViewQuestion {
+  id: string;
+  topic: TopicId;
+  type: "skipperView";
+  prompt: string;
+  answer: string;
+  heading: number;
+  why?: string;
+}
+
+/**
+ * "What tack are you on?" — same skipper's-eye wind indicator as
+ * SkipperViewQuestion, but asking port vs. starboard instead of the point
+ * of sail. Only generated for headings with a defined tack (a reach, not
+ * dead upwind/downwind). Always rendered with the fixed TACK_CHOICES.
+ */
+export interface TackQuestion {
+  id: string;
+  topic: TopicId;
+  type: "tack";
+  prompt: string;
+  answer: string;
+  heading: number;
+  why: string;
+}
+
+export const TACK_CHOICES = ["Port Tack", "Starboard Tack"] as const;
+
+/**
+ * "As you go from X to Y, do you sheet in or ease?" — a start/end boat pair
+ * like ManeuverQuestion, but asking about trim direction rather than naming
+ * the maneuver. Always rendered with the fixed TRIM_CHOICES.
+ */
+export interface TrimActionQuestion {
+  id: string;
+  topic: TopicId;
+  type: "trimAction";
+  prompt: string;
+  answer: string;
+  boats: BoatSpec | BoatSpec[];
+  turnArc?: TurnArcSpec;
+  why: string;
+}
+
+export const TRIM_CHOICES = ["Sheet In", "Ease (Sheet Out)"] as const;
+
+/**
+ * "Your wind indicator looks like this, and you want to head up/bear away
+ * to a new point of sail — which way do you move the tiller?" Rendered
+ * with the skipper's-eye view (a single current heading, no destination
+ * shown) and the fixed TILLER_CHOICES.
+ */
+export interface TillerDirectionQuestion {
+  id: string;
+  topic: TopicId;
+  type: "tillerDirection";
+  prompt: string;
+  answer: string;
+  heading: number;
+  why: string;
+}
+
+export const TILLER_CHOICES = ["Push Tiller Away", "Pull Tiller Toward You"] as const;
+
+/**
+ * "You push/pull the tiller from this point of sail and hold the new
+ * course — what point of sail do you end up on?" Same start/end wheel
+ * diagram as ManeuverQuestion and TrimActionQuestion, but the end boat's
+ * label is deliberately generic ("end", no point-of-sail name) since
+ * naming the destination is the answer being tested. Always rendered with
+ * the fixed POINT_OF_SAIL_CHOICES.
+ */
+export interface NewPointOfSailQuestion {
+  id: string;
+  topic: TopicId;
+  type: "newPointOfSail";
+  prompt: string;
+  answer: string;
+  boats: BoatSpec | BoatSpec[];
+  turnArc?: TurnArcSpec;
+  why: string;
+}
+
+/**
+ * "How do you get from here to there?" — a single boat plus a destination
+ * dock/mark on the lake map, asking for the maneuver in general terms
+ * rather than a specific point-of-sail name. Always rendered with the
+ * fixed NAV_MANEUVER_CHOICES.
+ */
+export interface NavManeuverQuestion {
+  id: string;
+  topic: TopicId;
+  type: "navManeuver";
+  prompt: string;
+  answer: string;
+  boats: LakeBoat[];
+  docks?: LakeDock[];
+  marks?: LakeMark[];
+  why: string;
+}
+
+export const NAV_MANEUVER_CHOICES = [
+  "Tack upwind in a zigzag",
+  "Sail a single straight course",
+  "Bear away, then jibe downwind",
+] as const;
+
+/**
+ * "Which of these routes actually gets you there?" — same lake map, but
+ * with 2-3 candidate paths drawn on the water; the wrong ones cut through
+ * the No-Go Zone or across land. Answer is the route's own label (e.g.
+ * "Route B"), not a fixed choice set — choices come from `routes`.
+ */
+export interface NavRouteQuestion {
+  id: string;
+  topic: TopicId;
+  type: "navRoute";
+  prompt: string;
+  answer: string;
+  boats: LakeBoat[];
+  docks?: LakeDock[];
+  marks?: LakeMark[];
+  routes: LakeRoute[];
+  why: string;
+}
+
+/**
+ * "Which boat has right of way?" — two (or more) boats placed on open
+ * water on the lake map, testing the COLREGS rules from the Right of Way
+ * topic (starboard/port, leeward/windward, overtaking, sail-over-power).
+ * Answer is a boat's own label, not a fixed choice set.
+ */
+export interface RightOfWayQuestion {
+  id: string;
+  topic: TopicId;
+  type: "rightOfWay";
+  prompt: string;
+  answer: string;
+  boats: LakeBoat[];
+  why: string;
+}
+
+export type Question =
+  | RecallQuestion
+  | ManeuverQuestion
+  | PointOfSailQuestion
+  | LabelQuestion
+  | SkipperViewQuestion
+  | TrimActionQuestion
+  | TillerDirectionQuestion
+  | NewPointOfSailQuestion
+  | NavManeuverQuestion
+  | NavRouteQuestion
+  | RightOfWayQuestion
+  | TackQuestion;

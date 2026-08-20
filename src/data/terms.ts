@@ -40,14 +40,14 @@ export const TERMS: Term[] = [
   { id: "telltales", topic: "rig", term: "Telltales", definition: "Short pieces of yarn/ribbon on the sails that show airflow, used to fine-tune trim." },
 
   // ---------- Points of sail ----------
-  { id: "no-go-zone", topic: "pointsOfSail", term: "No-Go (No-Sail) Zone", definition: "The arc directly into the wind (roughly 45° either side) where sails can't generate power; a boat pointed here will stall or luff." },
+  { id: "no-go-zone", topic: "pointsOfSail", term: "Irons (No-Go Zone)", definition: "The arc directly into the wind (roughly 45° either side) where sails can't generate power; a boat pointed here will stall or luff." },
   { id: "close-reach", topic: "pointsOfSail", term: "Close Reach", definition: "The closest point of sail to the wind that still sails efficiently — sails trimmed in fairly tight." },
   { id: "beam-reach", topic: "pointsOfSail", term: "Beam Reach", definition: "Wind hitting the boat roughly at a right angle (from the side)." },
   { id: "broad-reach", topic: "pointsOfSail", term: "Broad Reach", definition: "Wind coming from behind and to one side — between beam reach and a run." },
   { id: "run", topic: "pointsOfSail", term: "Run", definition: "Sailing with the wind directly (or nearly) behind you; sails eased way out." },
 
   // ---------- Tacking vs. jibing ----------
-  { id: "tack-maneuver", topic: "tackingJibing", term: "Tack (maneuver)", definition: "Turning the bow through the wind (through the No-Go Zone) to change which side the wind hits." },
+  { id: "tack-maneuver", topic: "tackingJibing", term: "Tack (maneuver)", definition: "Turning the bow through the wind (through irons) to change which side the wind hits." },
   { id: "jibe", topic: "tackingJibing", term: "Jibe", definition: "Turning the stern through the wind (while sailing downwind) to change which side the wind hits; the boom swings across." },
   { id: "port-tack", topic: "tackingJibing", term: "Port Tack", definition: "Sailing with the wind hitting the port (left) side of the boat — boom typically out to starboard." },
   { id: "starboard-tack", topic: "tackingJibing", term: "Starboard Tack", definition: "Sailing with the wind hitting the starboard (right) side of the boat — boom typically out to port." },

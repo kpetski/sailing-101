@@ -36,7 +36,7 @@ export const RIG_LABEL_POINTS: LabelPoint[] = [
   { id: "shrouds", x: 620, y: 640 },
 ];
 
-const HULL_VIEWBOX = "0 0 500 270";
+const HULL_VIEWBOX = "0 -200 500 470";
 const RIG_VIEWBOX = "0 0 1201 1280";
 
 function HullArt() {
@@ -83,6 +83,25 @@ function HullArt() {
 
       {/* cockpit — shallow recessed well aft of the cabin trunk */}
       <path d="M100,102 Q150,128 195,92" fill="none" stroke="#8a8168" strokeWidth={1.5} strokeDasharray="3,3" />
+
+      {/*
+        Mast/boom/mainsail, added purely so this hull silhouette reads as a
+        sailboat at a glance. Unlabeled here (no LabelPoint) — mast, boom,
+        and mainsail are already labeled dots on the separate Rig page, so
+        this is background context only, not a duplicate labeling target.
+      */}
+      <line x1={340} y1={-178} x2={486} y2={122} stroke="#20302c" strokeWidth={1.2} strokeDasharray="6,5" opacity={0.4} />
+      <line x1={340} y1={-178} x2={78} y2={120} stroke="#20302c" strokeWidth={1.2} strokeDasharray="6,5" opacity={0.4} />
+      <path
+        d="M340,-172 L340,84 L206,84 Q252,-38 340,-172 Z"
+        fill="#f5f1e6"
+        stroke="#20302c"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        opacity={0.92}
+      />
+      <line x1={205} y1={87} x2={342} y2={87} stroke="#20302c" strokeWidth={3.5} strokeLinecap="round" />
+      <line x1={340} y1={84} x2={340} y2={-178} stroke="#20302c" strokeWidth={3.5} strokeLinecap="round" />
     </>
   );
 }

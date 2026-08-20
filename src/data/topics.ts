@@ -14,7 +14,7 @@ export const TOPICS: Topic[] = [
   {
     id: "pointsOfSail",
     title: "Points of Sail",
-    blurb: "The No-Go Zone, close reach, beam reach, broad reach, and run.",
+    blurb: "Irons (No-Go Zone), close reach, beam reach, broad reach, and run.",
   },
   {
     id: "tackingJibing",

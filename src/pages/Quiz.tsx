@@ -2,12 +2,22 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { QUESTIONS } from "../data/questions";
 import { TOPIC_MAP } from "../data/topics";
-import { POINT_OF_SAIL_CHOICES, type Question, type TopicId } from "../data/types";
+import {
+  NAV_MANEUVER_CHOICES,
+  POINT_OF_SAIL_CHOICES,
+  TACK_CHOICES,
+  TILLER_CHOICES,
+  TRIM_CHOICES,
+  type Question,
+  type TopicId,
+} from "../data/types";
 import PointsOfSailDiagram, {
   MANEUVER_LABELS,
   type Maneuver,
 } from "../components/PointsOfSailDiagram";
 import LabelDiagram from "../components/LabelDiagram";
+import { SkipperViewIcon } from "../components/SkipperView";
+import LakeMap from "../components/LakeMap";
 import { isCorrect, normalizeAnswer } from "../lib/grading";
 import { shuffle } from "../lib/shuffle";
 import { useQuizProgress } from "../hooks/useQuizProgress";
@@ -20,10 +30,50 @@ interface SessionResult {
   correct: boolean;
 }
 
+/**
+ * Several question builders (skipper view, tack, tiller direction, new
+ * point of sail) generate one copy per topic — id like `tack-run--sailTrim`
+ * — so the same question surfaces in each of that content's topic quizzes.
+ * In an aggregate quiz that pulls from multiple topics at once (Diagrams
+ * only, Wind indicator practice), that duplication just repeats the same
+ * question back to back; keep the first copy of each and drop the rest.
+ * Exported so Home's displayed question counts match what the quiz pool
+ * actually contains.
+ */
+export function dedupeCrossTopic(qs: Question[]): Question[] {
+  const seen = new Set<string>();
+  const result: Question[] = [];
+  for (const q of qs) {
+    const key = q.id.replace(/--[a-zA-Z]+$/, "");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(q);
+  }
+  return result;
+}
+
+// Question types with a diagram to read rather than a term/definition to recall —
+// points of sail, turning, and telltale/trim scenarios all live here.
+export const DIAGRAM_TYPES = new Set<Question["type"]>([
+  "maneuver",
+  "pointOfSail",
+  "skipperView",
+  "trimAction",
+  "tillerDirection",
+  "newPointOfSail",
+  "navManeuver",
+  "navRoute",
+  "rightOfWay",
+  "tack",
+]);
+
 export default function Quiz() {
   const [searchParams] = useSearchParams();
   const topicParam = searchParams.get("topic");
-  const isMissedMode = searchParams.get("mode") === "missed";
+  const modeParam = searchParams.get("mode");
+  const isMissedMode = modeParam === "missed";
+  const isDiagramsMode = modeParam === "diagrams";
+  const isSkipperMode = modeParam === "skipperView";
   const { progress, recordAnswer } = useQuizProgress();
 
   // Snapshot the missed-id set once, at mount, so the list doesn't shift under the user mid-quiz.
@@ -32,9 +82,13 @@ export default function Quiz() {
   const [questions, setQuestions] = useState<Question[]>(() => {
     const pool = isMissedMode
       ? QUESTIONS.filter((q) => missedIdsAtStart.has(q.id))
-      : topicParam && topicParam !== "all"
-        ? QUESTIONS.filter((q) => q.topic === topicParam)
-        : QUESTIONS;
+      : isSkipperMode
+        ? dedupeCrossTopic(QUESTIONS.filter((q) => q.type === "skipperView"))
+        : isDiagramsMode
+          ? dedupeCrossTopic(QUESTIONS.filter((q) => DIAGRAM_TYPES.has(q.type)))
+          : topicParam && topicParam !== "all"
+            ? QUESTIONS.filter((q) => q.topic === topicParam)
+            : QUESTIONS;
     return shuffle(pool);
   });
 
@@ -51,7 +105,14 @@ export default function Quiz() {
   const choices = useMemo(() => {
     if (!question) return [];
     if (question.type === "recall" && question.choices) return question.choices;
-    if (question.type === "pointOfSail") return [...POINT_OF_SAIL_CHOICES];
+    if (question.type === "pointOfSail" || question.type === "skipperView" || question.type === "newPointOfSail")
+      return [...POINT_OF_SAIL_CHOICES];
+    if (question.type === "trimAction") return [...TRIM_CHOICES];
+    if (question.type === "tillerDirection") return [...TILLER_CHOICES];
+    if (question.type === "tack") return [...TACK_CHOICES];
+    if (question.type === "navManeuver") return [...NAV_MANEUVER_CHOICES];
+    if (question.type === "navRoute") return question.routes.map((r) => r.label);
+    if (question.type === "rightOfWay") return question.boats.map((b) => b.label ?? "");
     return [];
   }, [question]);
 
@@ -158,11 +219,18 @@ export default function Quiz() {
         </span>
       </div>
 
-      {(question.type === "maneuver" || question.type === "pointOfSail") && (
+      {(question.type === "maneuver" ||
+        question.type === "pointOfSail" ||
+        question.type === "trimAction" ||
+        question.type === "newPointOfSail") && (
         <div className={styles.diagramWrap}>
           <PointsOfSailDiagram
             boats={question.boats}
-            turnArc={question.type === "maneuver" ? question.turnArc : undefined}
+            turnArc={
+              question.type === "maneuver" || question.type === "trimAction" || question.type === "newPointOfSail"
+                ? question.turnArc
+                : undefined
+            }
             obstacleAt={question.type === "maneuver" ? question.obstacleAt : undefined}
             targetAt={question.type === "maneuver" ? question.targetAt : undefined}
           />
@@ -175,6 +243,23 @@ export default function Quiz() {
         </div>
       )}
 
+      {(question.type === "skipperView" || question.type === "tillerDirection" || question.type === "tack") && (
+        <div className={styles.diagramWrap} style={{ maxWidth: 220 }}>
+          <SkipperViewIcon heading={question.heading} />
+        </div>
+      )}
+
+      {(question.type === "navManeuver" || question.type === "navRoute" || question.type === "rightOfWay") && (
+        <div className={styles.diagramWrap} style={{ maxWidth: 480 }}>
+          <LakeMap
+            boats={question.boats}
+            docks={question.type !== "rightOfWay" ? question.docks : undefined}
+            marks={question.type !== "rightOfWay" ? question.marks : undefined}
+            routes={question.type === "navRoute" ? question.routes : undefined}
+          />
+        </div>
+      )}
+
       <div className={`card`}>
         <div className={styles.prompt}>{question.prompt}</div>
 
@@ -182,8 +267,8 @@ export default function Quiz() {
           <div className={styles.maneuverGrid}>
             {MANEUVER_OPTIONS.map((m) => {
               const label = MANEUVER_LABELS[m];
-              const isChosen = submitted && selected === label;
-              const isAnswer = submitted && normalizeAnswer(question.answer) === normalizeAnswer(label);
+              const isChosen = submitted && selected === m;
+              const isAnswer = submitted && question.answer === m;
               const cls = !submitted
                 ? styles.choiceBtn
                 : isAnswer
@@ -192,7 +277,7 @@ export default function Quiz() {
                     ? `${styles.choiceBtn} ${styles.incorrect}`
                     : styles.choiceBtn;
               return (
-                <button key={m} className={cls} disabled={submitted} onClick={() => grade(label)}>
+                <button key={m} className={cls} disabled={submitted} onClick={() => grade(m)}>
                   {label}
                 </button>
               );
@@ -200,7 +285,16 @@ export default function Quiz() {
           </div>
         )}
 
-        {(question.type === "pointOfSail" || (question.type === "recall" && question.choices)) && (
+        {(question.type === "pointOfSail" ||
+          question.type === "skipperView" ||
+          question.type === "trimAction" ||
+          question.type === "tillerDirection" ||
+          question.type === "newPointOfSail" ||
+          question.type === "navManeuver" ||
+          question.type === "navRoute" ||
+          question.type === "rightOfWay" ||
+          question.type === "tack" ||
+          (question.type === "recall" && question.choices)) && (
           <div className={styles.choices}>
             {choices.map((choice) => {
               const isChosen = submitted && selected === choice;

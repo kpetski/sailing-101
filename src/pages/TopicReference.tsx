@@ -6,6 +6,7 @@ import type { TopicId } from "../data/types";
 import PointsOfSailDiagram from "../components/PointsOfSailDiagram";
 import LabelDiagram, { HULL_LABEL_POINTS, RIG_LABEL_POINTS, type LabelPoint } from "../components/LabelDiagram";
 import PhotoLabelStudio from "../components/PhotoLabelStudio";
+import { SkipperViewIcon, SKIPPER_VIEW_POINTS } from "../components/SkipperView";
 import { shuffle } from "../lib/shuffle";
 import styles from "./TopicReference.module.css";
 
@@ -16,10 +17,13 @@ function pointsToTerms(points: LabelPoint[]) {
 }
 
 const POINTS_OF_SAIL_OVERVIEW = [
-  { heading: 0, color: "#a9c9c2", label: "No-Go" },
+  { heading: 0, color: "#a9c9c2", label: "Irons" },
   { heading: -45, color: "#7fb3ab", label: "Close Reach" },
+  { heading: 45, color: "#7fb3ab", label: "Close Reach" },
+  { heading: -90, color: "#7fb3ab", label: "Beam Reach" },
   { heading: 90, color: "#7fb3ab", label: "Beam Reach" },
   { heading: -135, color: "#3f5c56", label: "Broad Reach" },
+  { heading: 135, color: "#3f5c56", label: "Broad Reach" },
   { heading: 180, color: "#3f5c56", label: "Run" },
 ];
 
@@ -102,6 +106,38 @@ function TelltaleReference() {
         answers one of your <b>three key questions</b>: "are my sails trimmed properly?" This is different
         from the gold <b>wind indicator</b> on the shroud/mast, which shows your angle to the wind — straight
         back near irons, straight out to the side near beam reach.
+      </div>
+    </div>
+  );
+}
+
+/** Same polar layout PointsOfSailDiagram's wheel uses: 0 = top, positive = clockwise. */
+function wheelPos(heading: number, radiusPct: number) {
+  const rad = ((heading - 90) * Math.PI) / 180;
+  return { left: `${50 + radiusPct * Math.cos(rad)}%`, top: `${50 + radiusPct * Math.sin(rad)}%` };
+}
+
+function SkipperViewReference() {
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>
+        The skipper's view — your wind indicator, point by point
+      </div>
+      <div className={styles.skipperWheel}>
+        <div className={styles.skipperWheelCenter}>Position around the circle matches the wheel diagram above.</div>
+        {SKIPPER_VIEW_POINTS.map((p) => (
+          <div className={styles.skipperWheelItem} key={p.id} style={wheelPos(p.heading, 38)}>
+            <SkipperViewIcon heading={p.heading} className={styles.ttSvg} />
+            <div className={styles.ttLabel}>{p.name}</div>
+          </div>
+        ))}
+      </div>
+      <div className="callout">
+        This is the gold wind indicator up on the shroud/mast, seen from where you sit at the tiller — the
+        boat stays put; the indicator swings around to show your angle to the wind. To point higher (indicator
+        swings toward straight-back), <b>push the tiller away</b> from you. To fall off (indicator swings
+        toward straight-forward), <b>pull the tiller toward you</b>. Full rule on the{" "}
+        <Link to="/reference/tackingJibing">Tacking vs. Jibing</Link> page.
       </div>
     </div>
   );
@@ -260,7 +296,12 @@ export default function TopicReference() {
         </>
       )}
       {topic.id === "tackingJibing" && <TillerReference />}
-      {topic.id === "sailTrim" && <TelltaleReference />}
+      {topic.id === "sailTrim" && (
+        <>
+          <TelltaleReference />
+          <SkipperViewReference />
+        </>
+      )}
 
       <dl className={styles.termList}>
         {terms.map((term) => (
