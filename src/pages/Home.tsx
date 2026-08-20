@@ -4,7 +4,26 @@ import { GAMES } from "../data/games";
 import { QUESTIONS } from "../data/questions";
 import { useQuizProgress } from "../hooks/useQuizProgress";
 import { DIAGRAM_TYPES, dedupeCrossTopic } from "./Quiz";
+import FlagStatus from "../components/FlagStatus";
 import styles from "./Home.module.css";
+
+const RESOURCE_LINKS = [
+  {
+    label: "Current Conditions Flag — Milwaukee Community Sailing Center",
+    blurb: "The live white/yellow/green/black flag status this app's widget above is sourced from.",
+    href: "https://sailingcenter.org/current-flag/",
+  },
+  {
+    label: "US Sailing",
+    blurb: "The national governing body behind the Basic Keelboat certification.",
+    href: "https://www.ussailing.org/",
+  },
+  {
+    label: "NWS Marine Forecast",
+    blurb: "National Weather Service marine and small craft forecasts.",
+    href: "https://www.weather.gov/marine/",
+  },
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -39,6 +58,8 @@ export default function Home() {
         <h1>Basic Keelboat Study</h1>
         <p>Points of sail, tacking &amp; jibing, and everything else for the US Sailing evaluation.</p>
       </div>
+
+      <FlagStatus />
 
       <section className={`card ${styles.section}`}>
         <div className={styles.sectionTitle}>Your progress</div>
@@ -119,6 +140,18 @@ export default function Home() {
               <h3>{topic.title}</h3>
               <p>{topic.blurb}</p>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionTitle}>Resources</div>
+        <div className={styles.quizButtons}>
+          {RESOURCE_LINKS.map((link) => (
+            <a key={link.href} href={link.href} target="_blank" rel="noreferrer" className={`card ${styles.topicCard}`}>
+              <h3>{link.label}</h3>
+              <p>{link.blurb}</p>
+            </a>
           ))}
         </div>
       </section>

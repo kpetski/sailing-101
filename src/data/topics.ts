@@ -44,6 +44,11 @@ export const TOPICS: Topic[] = [
     title: "The Three Key Questions",
     blurb: "The running checklist every helmsperson asks, constantly.",
   },
+  {
+    id: "flags",
+    title: "Conditions Flags",
+    blurb: "White, yellow, green, and black — what each sailing-conditions flag means.",
+  },
 ];
 
 export const TOPIC_MAP: Record<TopicId, Topic> = Object.fromEntries(

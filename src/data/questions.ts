@@ -60,7 +60,7 @@ function buildRecallQuestions(): RecallQuestion[] {
       type: "recall",
       prompt: `What term/concept does this describe?\n"${term.definition}"`,
       answer: term.term,
-      acceptableAnswers: [term.term],
+      acceptableAnswers: [term.term, ...(term.acceptableAnswers ?? [])],
     });
 
     const distractors = distractorDefinitions(term, TERMS);

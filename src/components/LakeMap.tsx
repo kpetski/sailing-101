@@ -43,6 +43,12 @@ export interface LakeMark {
   label?: string;
 }
 
+export interface LakeObstacle {
+  x: number;
+  y: number;
+  r: number;
+}
+
 export interface LakeRoute {
   points: [number, number][];
   color: string;
@@ -102,6 +108,10 @@ function Dock({ x, y, angle, label }: LakeDock) {
       )}
     </g>
   );
+}
+
+function Obstacle({ x, y, r }: LakeObstacle) {
+  return <circle cx={x} cy={y} r={r} fill="url(#lakeHazardHatch)" stroke="#b5533c" strokeWidth={2} />;
 }
 
 function Mark({ x, y, label }: LakeMark) {
@@ -172,10 +182,11 @@ export interface LakeMapProps {
   docks?: LakeDock[];
   marks?: LakeMark[];
   routes?: LakeRoute[];
+  obstacles?: LakeObstacle[];
   className?: string;
 }
 
-export default function LakeMap({ boats, docks = [], marks = [], routes = [], className }: LakeMapProps) {
+export default function LakeMap({ boats, docks = [], marks = [], routes = [], obstacles = [], className }: LakeMapProps) {
   return (
     <svg
       viewBox={`0 0 ${LAKE_VIEW_W} ${LAKE_VIEW_H}`}
@@ -186,6 +197,10 @@ export default function LakeMap({ boats, docks = [], marks = [], routes = [], cl
         <marker id="lakeWindHead" markerWidth={7} markerHeight={7} refX={5} refY={3.5} orient="auto">
           <path d="M0,0 L7,3.5 L0,7 Z" fill="#b5533c" />
         </marker>
+        <pattern id="lakeHazardHatch" width={6} height={6} patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width={6} height={6} fill="#f3d9d2" />
+          <line x1={0} y1={0} x2={0} y2={6} stroke="#b5533c" strokeWidth={2} />
+        </pattern>
       </defs>
 
       {[70, 175, 280, 385, 460].map((wx) => (
@@ -212,6 +227,9 @@ export default function LakeMap({ boats, docks = [], marks = [], routes = [], cl
       ))}
       {marks.map((m, i) => (
         <Mark key={i} {...m} />
+      ))}
+      {obstacles.map((o, i) => (
+        <Obstacle key={i} {...o} />
       ))}
       {boats.map((b, i) => (
         <LakeBoatIcon key={i} {...b} />

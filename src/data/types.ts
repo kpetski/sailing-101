@@ -10,7 +10,8 @@ export type TopicId =
   | "sailTrim"
   | "rightOfWay"
   | "dockingCOB"
-  | "threeKeyQuestions";
+  | "threeKeyQuestions"
+  | "flags";
 
 export interface Topic {
   id: TopicId;
@@ -26,6 +27,8 @@ export interface Term {
   topic: TopicId;
   term: string;
   definition: string;
+  /** Extra strings accepted alongside `term` itself when grading the def-to-term recall question (case/whitespace-insensitive) — e.g. "Green" as shorthand for "Green Flag". */
+  acceptableAnswers?: string[];
 }
 
 export interface RecallQuestion {

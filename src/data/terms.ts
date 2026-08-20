@@ -78,4 +78,10 @@ export const TERMS: Term[] = [
   { id: "q2-point-of-sail", topic: "threeKeyQuestions", term: "What is my point of sail?", definition: "The second key question — know your heading relative to the wind." },
   { id: "q3-trim", topic: "threeKeyQuestions", term: "Are my sails trimmed properly?", definition: "The third key question — check trim for your current point of sail." },
   { id: "q4-changed", topic: "threeKeyQuestions", term: "Has anything changed since I started asking?", definition: "The bonus follow-up — wind shifts, so keep re-asking the three key questions continuously." },
+
+  // ---------- Conditions flags ----------
+  { id: "flag-white", topic: "flags", term: "White Flag", definition: "Light air conditions, roughly 0-10 knots of wind.", acceptableAnswers: ["White"] },
+  { id: "flag-yellow", topic: "flags", term: "Yellow Flag", definition: "Medium air conditions, roughly 0-15 knots of wind.", acceptableAnswers: ["Yellow"] },
+  { id: "flag-green", topic: "flags", term: "Green Flag", definition: "Heavy air conditions, roughly 0-20 knots of wind.", acceptableAnswers: ["Green"] },
+  { id: "flag-black", topic: "flags", term: "Black Flag", definition: "No sailing — conditions are outside the safe range to go out.", acceptableAnswers: ["Black"] },
 ];

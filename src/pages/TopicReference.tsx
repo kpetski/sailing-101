@@ -260,6 +260,45 @@ function LabelMatchGame({ variant, points }: { variant: "hull" | "rig"; points: 
   );
 }
 
+const FLAG_SWATCHES: { name: string; swatch: string; border: string }[] = [
+  { name: "White", swatch: "#ffffff", border: "#8a8168" },
+  { name: "Yellow", swatch: "#e8c23a", border: "#a9862a" },
+  { name: "Green", swatch: "#2f7a4f", border: "#1f5236" },
+  { name: "Black", swatch: "#1c2b30", border: "#000000" },
+];
+
+function FlagReference() {
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>
+        Conditions flags at a glance
+      </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        {FLAG_SWATCHES.map((f) => (
+          <div key={f.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 5,
+                border: `2px solid ${f.border}`,
+                background: f.swatch,
+                display: "inline-block",
+              }}
+            />
+            <span style={{ fontWeight: "bold", fontSize: "0.9rem" }}>{f.name}</span>
+          </div>
+        ))}
+      </div>
+      <div className="callout" style={{ marginTop: 12 }}>
+        Flown to signal conditions at a given sailing site — check the flag before you head out, and keep an eye
+        on it while you're on the water in case it changes. See today's live flag on the{" "}
+        <Link to="/">home page</Link>.
+      </div>
+    </div>
+  );
+}
+
 export default function TopicReference() {
   const { topicId } = useParams<{ topicId: string }>();
   const topic = topicId ? TOPIC_MAP[topicId as TopicId] : undefined;
@@ -300,6 +339,7 @@ export default function TopicReference() {
         </>
       )}
       {topic.id === "tackingJibing" && <TillerReference />}
+      {topic.id === "flags" && <FlagReference />}
       {topic.id === "sailTrim" && (
         <>
           <TelltaleReference />

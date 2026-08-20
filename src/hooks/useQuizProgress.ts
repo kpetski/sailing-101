@@ -20,6 +20,17 @@ const EMPTY_PROGRESS: QuizProgress = { scores: {}, missed: [] };
 export function useQuizProgress() {
   const [progress, setProgress] = useLocalStorage<QuizProgress>(STORAGE_KEY, EMPTY_PROGRESS);
 
+  /** Zeroes out the given topics' stats — call when a quiz starts, so the score shown reflects that attempt rather than accumulating across every attempt ever. */
+  function startSession(topics: TopicId[]) {
+    setProgress((prev) => {
+      const nextScores = { ...prev.scores };
+      for (const topic of topics) {
+        nextScores[topic] = { correct: 0, attempted: 0 };
+      }
+      return { ...prev, scores: nextScores };
+    });
+  }
+
   function recordAnswer(question: Question, correct: boolean) {
     setProgress((prev) => {
       const stats = prev.scores[question.topic] ?? { correct: 0, attempted: 0 };
@@ -44,5 +55,5 @@ export function useQuizProgress() {
     setProgress(EMPTY_PROGRESS);
   }
 
-  return { progress, recordAnswer, resetProgress };
+  return { progress, recordAnswer, resetProgress, startSession };
 }

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { windwardOf, headingName, REAL_POINTS, applyHeadingMove, legalNextHeadings } from "../lib/boatMath";
 import BoatDiagram from "./BoatDiagram";
-import LakeMap from "./LakeMap";
+import LakeMap, { type LakeObstacle } from "./LakeMap";
 
 /**
  * Chart a Course: same steering controls as Navigate (tiller + crew, one
@@ -12,17 +12,26 @@ import LakeMap from "./LakeMap";
  * (it's built from a random walk over the same legal moves you have), so
  * there's always a real solution, even though your own route doesn't have
  * to match it exactly.
+ *
+ * Some scenarios add a hazard (one rock to sail around, or two flanking a
+ * channel to thread) placed on the straight line between start and mark —
+ * see buildObstacles for how placement guarantees the walked solution still
+ * gets through, even though a naive direct line wouldn't.
  */
 const STEP = 42;
 const ORIGIN = { x: 260, y: 190 };
 const CAPTURE_RADIUS = 14;
 const ROUND_SIZE = 8;
+// Extra clearance added to an obstacle's radius when checking whether a leg
+// of travel clips it — accounts for the boat's own size, not just its center point.
+const HIT_BUFFER = 7;
 
 interface ChartScenario {
   id: string;
   startHeading: number;
   markX: number;
   markY: number;
+  obstacles: LakeObstacle[];
 }
 
 function headingDelta(heading: number): [number, number] {
@@ -30,28 +39,108 @@ function headingDelta(heading: number): [number, number] {
   return [STEP * Math.sin(rad), -STEP * Math.cos(rad)];
 }
 
+/** Shortest distance from point (px,py) to the segment a→b. */
+function pointSegmentDistance(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  let t = lenSq === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function segmentHitsObstacle(ax: number, ay: number, bx: number, by: number, obstacle: LakeObstacle): boolean {
+  return pointSegmentDistance(obstacle.x, obstacle.y, ax, ay, bx, by) <= obstacle.r + HIT_BUFFER;
+}
+
+type ScenarioVariant = "open" | "obstacle" | "channel";
+
+function pickVariant(): ScenarioVariant {
+  const r = Math.random();
+  if (r < 0.55) return "open";
+  if (r < 0.85) return "obstacle";
+  return "channel";
+}
+
+function walkPath(startHeading: number, legs: number): [number, number][] {
+  let heading = startHeading;
+  let x = ORIGIN.x;
+  let y = ORIGIN.y;
+  const path: [number, number][] = [[x, y]];
+  for (let i = 0; i < legs; i++) {
+    // Holding the current heading is a legal "move" too — weighted extra so
+    // real straight-line runs show up, not just a maneuver every leg.
+    const options = [...legalNextHeadings(heading), heading, heading];
+    heading = options[Math.floor(Math.random() * options.length)];
+    const [dx, dy] = headingDelta(heading);
+    x += dx;
+    y += dy;
+    path.push([x, y]);
+  }
+  return path;
+}
+
+/**
+ * Places a hazard (or, for a channel, two flanking hazards) on the straight
+ * line between the start and the mark — squarely in the way of a naive
+ * direct shot — then verifies the actual walked solution path doesn't clip
+ * it. Returns null if it does, so the caller can retry with a fresh walk
+ * rather than ever hand out an unsolvable scenario.
+ */
+function buildObstacles(variant: ScenarioVariant, path: [number, number][]): LakeObstacle[] | null {
+  if (variant === "open") return [];
+
+  const [startX, startY] = path[0];
+  const [endX, endY] = path[path.length - 1];
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+
+  const obstacles: LakeObstacle[] =
+    variant === "obstacle"
+      ? [{ x: midX, y: midY, r: 20 }]
+      : [
+          { x: midX + nx * 32, y: midY + ny * 32, r: 20 },
+          { x: midX - nx * 32, y: midY - ny * 32, r: 20 },
+        ];
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const [ax, ay] = path[i];
+    const [bx, by] = path[i + 1];
+    for (const obs of obstacles) {
+      if (segmentHitsObstacle(ax, ay, bx, by, obs)) return null;
+    }
+  }
+  return obstacles;
+}
+
 function generateScenario(id: string): ChartScenario {
+  const variant = pickVariant();
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const startHeading = REAL_POINTS[Math.floor(Math.random() * REAL_POINTS.length)];
+    const legs = 3 + Math.floor(Math.random() * 3);
+    const path = walkPath(startHeading, legs);
+    const [markX, markY] = path[path.length - 1];
+    if (Math.hypot(markX - ORIGIN.x, markY - ORIGIN.y) < STEP * 1.5) continue;
+    const obstacles = buildObstacles(variant, path);
+    if (obstacles === null) continue;
+    return { id, startHeading, markX, markY, obstacles };
+  }
+  // Fallback after repeated bad luck placing a hazard: plain open water,
+  // same distance-from-origin guarantee as above, always terminates fast.
   let startHeading: number = REAL_POINTS[0];
   let markX = ORIGIN.x;
   let markY = ORIGIN.y;
-  // Retry if the walk happened to land back on (or very near) the start.
   do {
     startHeading = REAL_POINTS[Math.floor(Math.random() * REAL_POINTS.length)];
-    let heading: number = startHeading;
-    let x = ORIGIN.x;
-    let y = ORIGIN.y;
-    const legs = 2 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < legs; i++) {
-      const options = legalNextHeadings(heading);
-      heading = options[Math.floor(Math.random() * options.length)];
-      const [dx, dy] = headingDelta(heading);
-      x += dx;
-      y += dy;
-    }
-    markX = x;
-    markY = y;
+    const path = walkPath(startHeading, 3 + Math.floor(Math.random() * 3));
+    [markX, markY] = path[path.length - 1];
   } while (Math.hypot(markX - ORIGIN.x, markY - ORIGIN.y) < STEP * 1.5);
-  return { id, startHeading, markX, markY };
+  return { id, startHeading, markX, markY, obstacles: [] };
 }
 
 function generateRound(n: number): ChartScenario[] {
@@ -69,6 +158,7 @@ export default function ChartCoursePractice() {
   const [tillerSide, setTillerSide] = useState<-1 | 0 | 1>(0);
   const [crewSide, setCrewSide] = useState<-1 | 0 | 1>(() => windwardOf(scenario.startHeading));
   const [moveLog, setMoveLog] = useState<string[]>([]);
+  const [showLog, setShowLog] = useState(false);
   // Snapshot taken right before each locked-in move, so a mis-click can be undone.
   const [history, setHistory] = useState<{ heading: number; crewSide: -1 | 0 | 1; x: number; y: number }[]>([]);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -109,34 +199,13 @@ export default function ChartCoursePractice() {
     setTillerSide(side);
   }
 
-  function lockInMove() {
-    if (tillerSide === 0 || submitted) return;
-    const windwardNow = windwardOf(currentHeading);
-    const crossing = crewSide !== windwardNow;
-    if (crossing && Math.abs(currentHeading) === 135) {
-      if (crewMoveTick <= tillerCenterTick) {
-        setMoveError("For a jibe, center the tiller first — steady on the reach — then move the crew to the new rail.");
-        return;
-      }
-      if (tillerPushTick <= crewMoveTick) {
-        setMoveError("For a jibe, move the crew to the new rail first, then push the tiller — not the other way around.");
-        return;
-      }
-    }
-    const result = applyHeadingMove(currentHeading, tillerSide, crewSide);
-    if (!result.ok) {
-      setMoveError(result.error);
-      return;
-    }
-    const [dx, dy] = headingDelta(result.newHeading);
-    const nextX = boatX + dx;
-    const nextY = boatY + dy;
+  function applyResolvedMove(newHeading: number, label: string, nextX: number, nextY: number) {
     setHistory((h) => [...h, { heading: currentHeading, crewSide, x: boatX, y: boatY }]);
-    setCurrentHeading(result.newHeading);
+    setCurrentHeading(newHeading);
     setBoatX(nextX);
     setBoatY(nextY);
     setTrail((t) => [...t, [nextX, nextY]]);
-    setMoveLog((log) => [...log, result.label]);
+    setMoveLog((log) => [...log, label]);
     // Leave the tiller where it is rather than snapping back to center — see
     // Navigate for why. Centers at Check, or whenever you drag it back
     // yourself to steady up before starting a new maneuver.
@@ -155,6 +224,50 @@ export default function ChartCoursePractice() {
         return next;
       });
     }
+  }
+
+  function tryMove(newHeading: number, label: string) {
+    const [dx, dy] = headingDelta(newHeading);
+    const nextX = boatX + dx;
+    const nextY = boatY + dy;
+    const blocked = scenario.obstacles.some((obs) => segmentHitsObstacle(boatX, boatY, nextX, nextY, obs));
+    if (blocked) {
+      setMoveError(
+        scenario.obstacles.length > 1
+          ? "That course runs into one of the hazards — try lining up with the gap between them."
+          : "That course runs straight into the hazard — try a different heading to go around it."
+      );
+      return;
+    }
+    applyResolvedMove(newHeading, label, nextX, nextY);
+  }
+
+  function lockInMove() {
+    if (submitted) return;
+    // Tiller centered = hold the current heading and keep sailing straight —
+    // no maneuver, so none of the turn rules apply.
+    if (tillerSide === 0) {
+      tryMove(currentHeading, `Held course on ${headingName(currentHeading)}`);
+      return;
+    }
+    const windwardNow = windwardOf(currentHeading);
+    const crossing = crewSide !== windwardNow;
+    if (crossing && Math.abs(currentHeading) === 135) {
+      if (crewMoveTick <= tillerCenterTick) {
+        setMoveError("For a jibe, center the tiller first — steady on the reach — then move the crew to the new rail.");
+        return;
+      }
+      if (tillerPushTick <= crewMoveTick) {
+        setMoveError("For a jibe, move the crew to the new rail first, then push the tiller — not the other way around.");
+        return;
+      }
+    }
+    const result = applyHeadingMove(currentHeading, tillerSide, crewSide);
+    if (!result.ok) {
+      setMoveError(result.error);
+      return;
+    }
+    tryMove(result.newHeading, result.label);
   }
 
   function undoLastMove() {
@@ -180,6 +293,7 @@ export default function ChartCoursePractice() {
     setTillerSide(0);
     setCrewSide(windwardOf(scenario.startHeading));
     setMoveLog([]);
+    setShowLog(false);
     setHistory([]);
     setMoveError(null);
     resetSequenceTicks();
@@ -206,6 +320,7 @@ export default function ChartCoursePractice() {
     setTillerSide(0);
     setCrewSide(windwardOf(s.startHeading));
     setMoveLog([]);
+    setShowLog(false);
     setHistory([]);
     setMoveError(null);
     setSubmitted(false);
@@ -243,14 +358,27 @@ export default function ChartCoursePractice() {
     loadQuestion(questions[nextIndex]);
   }
 
+  // Fixed reserve matching the sticky primary-move button's own height, so
+  // it never sticks on top of the boat diagram's interactive controls above
+  // it. Only that one button is sticky — it's the one pressed every move,
+  // unlike Give Up / the result / Next Question, which are once-per-question.
+  const STICKY_BUTTON_RESERVE = 56;
+
+  const hazardHint =
+    scenario.obstacles.length === 0
+      ? null
+      : scenario.obstacles.length > 1
+        ? "Thread the gap between the hazards."
+        : "Sail around the hazard.";
+
   return (
-    <div className="card" style={{ marginBottom: 20 }}>
-      <div className="eyebrow" style={{ marginBottom: 10 }}>
+    <div className="card" style={{ marginBottom: 20, paddingBottom: 8 }}>
+      <div className="eyebrow" style={{ marginBottom: 6 }}>
         Chart a Course — sail to the mark, one move at a time
       </div>
 
       {!finished && (
-        <div style={{ textAlign: "right", fontSize: "0.78rem", color: "var(--muted)", marginBottom: 10 }}>
+        <div style={{ textAlign: "right", fontSize: "0.78rem", color: "var(--muted)", marginBottom: 6 }}>
           Question {index + 1} of {questions.length}
         </div>
       )}
@@ -275,9 +403,10 @@ export default function ChartCoursePractice() {
         </div>
       ) : (
         <>
-          <div className="callout" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <span>
+          <div className="callout" style={{ marginBottom: 8, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: "0.92rem" }}>
               You're on <b>{headingName(currentHeading)}</b>. Sail to the mark.
+              {hazardHint && <span style={{ color: "var(--rust)" }}> {hazardHint}</span>}
             </span>
             {!submitted && (
               <button
@@ -292,13 +421,16 @@ export default function ChartCoursePractice() {
             )}
           </div>
 
-          <LakeMap
-            boats={[{ x: boatX, y: boatY, heading: currentHeading, color: submitted ? (isCorrect ? "#2f7a5c" : "#a4433a") : "#0f3d3e" }]}
-            marks={[{ x: scenario.markX, y: scenario.markY, label: "Goal" }]}
-            routes={trail.length > 1 ? [{ points: trail, color: "#1f6f6b", label: "" }] : []}
-          />
+          <div style={{ maxWidth: 300, margin: "0 auto" }}>
+            <LakeMap
+              boats={[{ x: boatX, y: boatY, heading: currentHeading, color: submitted ? (isCorrect ? "#2f7a5c" : "#a4433a") : "#0f3d3e" }]}
+              marks={[{ x: scenario.markX, y: scenario.markY, label: "Goal" }]}
+              routes={trail.length > 1 ? [{ points: trail, color: "#1f6f6b", label: "" }] : []}
+              obstacles={scenario.obstacles}
+            />
+          </div>
 
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 6, maxWidth: 190, marginLeft: "auto", marginRight: "auto" }}>
             <BoatDiagram
               heading={currentHeading}
               telltaleInteractive={false}
@@ -309,55 +441,69 @@ export default function ChartCoursePractice() {
               disabled={submitted}
             />
           </div>
-          <div style={{ textAlign: "center", fontSize: "0.78rem", color: "var(--muted)", marginTop: 4, marginBottom: 12 }}>
-            {submitted
-              ? "Locked in"
-              : "Drag the tiller toward or away from the skipper, or back to center, and use the arrows to move the crew when you're changing sides. Lock in each move — you'll know you've made it when you reach the mark."}
-          </div>
 
           {moveError && (
-            <div className="callout" style={{ marginBottom: 12, borderLeftColor: "var(--bad)", color: "var(--bad)" }}>
+            <div className="callout" style={{ marginBottom: 8, padding: "6px 12px", borderLeftColor: "var(--bad)", color: "var(--bad)", fontSize: "0.85rem" }}>
               {moveError}
             </div>
           )}
 
           {moveLog.length > 0 && (
-            <div style={{ marginBottom: 14, fontSize: "0.85rem", color: "var(--muted-strong)" }}>
-              {moveLog.map((label, i) => (
-                <div key={i}>
-                  {i + 1}. {label}
-                </div>
-              ))}
-              {!submitted && (
+            <div style={{ marginBottom: 6, fontSize: "0.82rem", color: "var(--muted-strong)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <button
                   className="btn"
-                  onClick={undoLastMove}
-                  style={{ marginTop: 8, padding: "4px 10px", fontSize: "0.78rem" }}
+                  onClick={() => setShowLog((v) => !v)}
+                  style={{ padding: "3px 9px", fontSize: "0.76rem" }}
                 >
-                  Undo Last Move
+                  {showLog ? "Hide" : "Show"} moves ({moveLog.length})
                 </button>
+                {!submitted && (
+                  <button className="btn" onClick={undoLastMove} style={{ padding: "3px 9px", fontSize: "0.76rem" }}>
+                    Undo Last Move
+                  </button>
+                )}
+              </div>
+              {showLog && (
+                <div style={{ marginTop: 6 }}>
+                  {moveLog.map((label, i) => (
+                    <div key={i}>
+                      {i + 1}. {label}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
+          {/* Sticky: only the button pressed every single move, so it's always
+              reachable without scrolling. Everything below it (Give Up, the
+              result, Next Question) happens once per question, not once per
+              move, so it stays in normal flow instead of competing for the
+              same pinned space. */}
           {!submitted && (
-            <button className="btn btn-block" disabled={tillerSide === 0} onClick={lockInMove} style={{ marginBottom: 10 }}>
-              Lock In Move
-            </button>
+            <>
+              <div style={{ height: STICKY_BUTTON_RESERVE }} />
+              <div style={{ position: "sticky", bottom: 0, background: "var(--paper-card)", paddingTop: 8, paddingBottom: 8 }}>
+                <button className="btn btn-block" onClick={lockInMove}>
+                  {tillerSide === 0 ? "Continue Straight" : "Lock In Move"}
+                </button>
+              </div>
+              {moveLog.length > 0 && (
+                <button className="btn btn-block" onClick={check} style={{ marginTop: 8 }}>
+                  Give Up
+                </button>
+              )}
+            </>
           )}
 
-          {!submitted ? (
-            moveLog.length > 0 && (
-              <button className="btn btn-block" onClick={check}>
-                Give Up
-              </button>
-            )
-          ) : (
+          {submitted && (
             <>
               <div
                 className="callout"
                 style={{
-                  marginBottom: 12,
+                  marginBottom: 8,
+                  padding: "8px 12px",
                   borderLeftColor: isCorrect ? "var(--good)" : "var(--bad)",
                   color: isCorrect ? "var(--good)" : "var(--bad)",
                 }}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { QUESTIONS } from "../data/questions";
 import { TOPIC_MAP } from "../data/topics";
@@ -74,7 +74,7 @@ export default function Quiz() {
   const isMissedMode = modeParam === "missed";
   const isDiagramsMode = modeParam === "diagrams";
   const isSkipperMode = modeParam === "skipperView";
-  const { progress, recordAnswer } = useQuizProgress();
+  const { progress, recordAnswer, startSession } = useQuizProgress();
 
   // Snapshot the missed-id set once, at mount, so the list doesn't shift under the user mid-quiz.
   const [missedIdsAtStart] = useState(() => new Set(progress.missed));
@@ -91,6 +91,14 @@ export default function Quiz() {
             : QUESTIONS;
     return shuffle(pool);
   });
+
+  // The score shown on the home page for a topic reflects the attempt just
+  // started, not a running lifetime average — so kick off each attempt by
+  // zeroing the stats for whatever topics this pool touches.
+  useEffect(() => {
+    startSession([...new Set(questions.map((q) => q.topic))]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [index, setIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -161,6 +169,7 @@ export default function Quiz() {
   }
 
   function retake() {
+    startSession([...new Set(questions.map((q) => q.topic))]);
     setQuestions((qs) => shuffle(qs));
     setIndex(0);
     setSubmitted(false);
