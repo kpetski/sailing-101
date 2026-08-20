@@ -343,6 +343,14 @@ export default function ManeuverGame() {
   const needsSheet = scenario.sheet !== null;
   const expectedCrew = windwardOf(scenario.targetHeading);
   const canCheck = userTiller !== null && userManeuver !== null && (!needsSheet || userSheet !== null);
+  // Tacking and jibing reference different moments: on a tack you push the
+  // tiller and cross to the new rail together, so "away" means away from the
+  // rail you started on — you end up on the same side you pushed toward. On
+  // a jibe you cross first, then push relative to your new seat — you end up
+  // on the opposite side. Head up/fall off never move the crew, so it
+  // doesn't matter which reference is used there.
+  const tillerReference =
+    scenario.maneuver === "jibe" ? ((crewSide || 1) as -1 | 1) : ((windwardOf(scenario.startHeading) || 1) as -1 | 1);
 
   function results(): FieldResult[] {
     const out: FieldResult[] = [
@@ -362,13 +370,9 @@ export default function ManeuverGame() {
     if (allOk) setCorrectCount((n) => n + 1);
   }
 
-  // "Toward you" is toward wherever the skipper dot currently is — evaluated
-  // live, so if you move the dot first and then set the tiller relative to
-  // your new seat, that's what gets graded.
   function handleTillerSideChange(side: -1 | 1) {
     setTillerSide(side);
-    const windwardNow = (crewSide || 1) as -1 | 1;
-    setUserTiller(side === windwardNow ? "Pull Tiller Toward You" : "Push Tiller Away");
+    setUserTiller(side === tillerReference ? "Pull Tiller Toward You" : "Push Tiller Away");
   }
 
   function loadQuestion(s: Scenario) {
