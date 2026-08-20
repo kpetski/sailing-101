@@ -7,8 +7,8 @@
  * Wind still blows straight down the canvas, same "0 = bow into the wind"
  * heading convention as the wheel, so the two diagrams read consistently.
  */
-const VIEW_W = 520;
-const VIEW_H = 360;
+export const LAKE_VIEW_W = 520;
+export const LAKE_VIEW_H = 360;
 
 const LAKE_PATH =
   "M 70,130 C 55,95 85,55 145,45 C 195,37 235,58 258,45 C 288,28 340,22 385,42 " +
@@ -178,7 +178,7 @@ export interface LakeMapProps {
 export default function LakeMap({ boats, docks = [], marks = [], routes = [], className }: LakeMapProps) {
   return (
     <svg
-      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      viewBox={`0 0 ${LAKE_VIEW_W} ${LAKE_VIEW_H}`}
       className={className}
       style={{ display: "block", width: "100%", height: "auto", background: "#eee7d3", borderRadius: 8, border: "1px solid #c9bfa5" }}
     >

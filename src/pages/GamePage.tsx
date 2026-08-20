@@ -3,6 +3,8 @@ import { GAME_MAP, type GameId } from "../data/games";
 import { TOPIC_MAP } from "../data/topics";
 import DirectionDrill from "../components/DirectionDrill";
 import ManeuverGame from "../components/ManeuverGame";
+import NavigatePractice from "../components/NavigatePractice";
+import ChartCoursePractice from "../components/ChartCoursePractice";
 
 export default function GamePage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -19,6 +21,8 @@ export default function GamePage() {
 
       {game.id === "directionDrill" && <DirectionDrill />}
       {game.id === "maneuverPractice" && <ManeuverGame />}
+      {game.id === "navigatePractice" && <NavigatePractice />}
+      {game.id === "chartCourse" && <ChartCoursePractice />}
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>

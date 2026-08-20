@@ -1,6 +1,6 @@
 import type { TopicId } from "./types";
 
-export type GameId = "directionDrill" | "maneuverPractice";
+export type GameId = "directionDrill" | "maneuverPractice" | "navigatePractice" | "chartCourse";
 
 export interface Game {
   id: GameId;
@@ -21,6 +21,18 @@ export const GAMES: Game[] = [
     id: "maneuverPractice",
     title: "Maneuver Practice",
     blurb: "Drag the telltale to a new point of sail, then call the tiller, sheet, and the maneuver's name.",
+    relatedTopics: ["sailTrim", "tackingJibing", "pointsOfSail"],
+  },
+  {
+    id: "navigatePractice",
+    title: "Navigate",
+    blurb: "Given a starting point of sail and a goal, steer there one real move at a time with the tiller and crew.",
+    relatedTopics: ["sailTrim", "tackingJibing", "pointsOfSail"],
+  },
+  {
+    id: "chartCourse",
+    title: "Chart a Course",
+    blurb: "Sail your boat across a map to reach a mark, tacking and jibing as needed with the same tiller and crew controls.",
     relatedTopics: ["sailTrim", "tackingJibing", "pointsOfSail"],
   },
 ];

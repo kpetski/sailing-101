@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { MANEUVER_LABELS, type Maneuver } from "./PointsOfSailDiagram";
 import { shuffle } from "../lib/shuffle";
+import { windwardOf, headingName } from "../lib/boatMath";
+import BoatDiagram from "./BoatDiagram";
 
 /**
  * Drag-the-telltale practice: given a current point of sail and a target
@@ -13,74 +15,6 @@ import { shuffle } from "../lib/shuffle";
  * a Run), so the telltale drag covers real distance and the maneuver name
  * has to account for the whole turn, not just the last step of it.
  */
-const VIEW_W = 200;
-const VIEW_H = 195;
-const MAST_X = 100;
-const MAST_Y = 78;
-const INDICATOR_LEN = 68;
-const HULL = "M84,174 L116,174 Q122,146 100,122 Q78,146 84,174 Z";
-const STERN_X = 100;
-const STERN_Y = 174;
-const PRESETS = [0, -45, 45, -90, 90, -135, 135, 180] as const;
-
-const TRIM_STOPS: [number, number][] = [
-  [0, 0],
-  [45, 10],
-  [90, 22],
-  [135, 32],
-  [180, 40],
-];
-
-function trimMagnitude(absNd: number) {
-  for (let i = 1; i < TRIM_STOPS.length; i++) {
-    const [x0, y0] = TRIM_STOPS[i - 1];
-    const [x1, y1] = TRIM_STOPS[i];
-    if (absNd <= x1) return y0 + ((absNd - x0) / (x1 - x0)) * (y1 - y0);
-  }
-  return TRIM_STOPS[TRIM_STOPS.length - 1][1];
-}
-
-function normalizeDeg(deg: number) {
-  const n = (((deg + 180) % 360) + 360) % 360 - 180;
-  // Keep dead-downwind headings at +180 rather than -180, so a fall-off from
-  // a port-tack broad reach to a run doesn't look like it flipped tacks.
-  return n === -180 ? 180 : n;
-}
-
-function snapToPreset(deg: number): number {
-  const n = deg === -180 ? 180 : deg;
-  let best: number = PRESETS[0];
-  let bestDiff = Infinity;
-  for (const p of PRESETS) {
-    const diff = Math.abs(n - p);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = p;
-    }
-  }
-  return best;
-}
-
-/** -1/1 = which side the boom is blown out to (leeward); 0 = squared on a run/irons. */
-function leanOf(heading: number): -1 | 0 | 1 {
-  const nd = normalizeDeg(heading);
-  return nd > 0.5 ? 1 : nd < -0.5 ? -1 : 0;
-}
-
-/** The rail you'd sit on for a given heading — opposite the boom. 0 = either/centered. */
-function windwardOf(heading: number): -1 | 0 | 1 {
-  const lean = leanOf(heading);
-  return lean === 0 ? 0 : ((-lean) as -1 | 1);
-}
-
-function headingName(h: number) {
-  const abs = Math.abs(h);
-  if (abs === 0) return "Irons";
-  if (abs === 180) return "Run";
-  const name = abs === 45 ? "Close Reach" : abs === 90 ? "Beam Reach" : "Broad Reach";
-  const tack = h > 0 ? "Port Tack" : "Starboard Tack";
-  return `${name}, ${tack}`;
-}
 
 const TILLER_CHOICES = ["Push Tiller Away", "Pull Tiller Toward You"] as const;
 const SHEET_CHOICES = ["Sheet In", "Ease (Sheet Out)"] as const;
@@ -158,175 +92,14 @@ const HARD_PAIRS: [number, number][] = [
 
 const BASIC_SCENARIOS: Scenario[] = EASY_PAIRS.map(([s, t], i) => buildScenario(`easy-${i}`, s, t));
 const ADVANCED_SCENARIOS: Scenario[] = HARD_PAIRS.map(([s, t], i) => buildScenario(`hard-${i}`, s, t));
+const SCENARIO_BY_ID: Record<string, Scenario> = Object.fromEntries(
+  [...BASIC_SCENARIOS, ...ADVANCED_SCENARIOS].map((s) => [s.id, s])
+);
 
 type Mode = "easy" | "hard";
 
 function poolFor(mode: Mode): Scenario[] {
   return mode === "easy" ? BASIC_SCENARIOS : ADVANCED_SCENARIOS;
-}
-
-/**
- * One boat, viewed from above with the bow up: drag the gold telltale to
- * the target heading, drag the tiller stick at the stern toward or away
- * from you, and use the arrows to move the little skipper dot to the new
- * windward rail if the tack changed (e.g. on a jibe).
- */
-function BoatDiagram({
-  heading,
-  onHeadingChange,
-  tillerSide,
-  onTillerSideChange,
-  tillerFeedback,
-  crewSide,
-  onCrewSideChange,
-  disabled,
-}: {
-  heading: number;
-  onHeadingChange: (h: number) => void;
-  /** Raw screen side the tiller handle is dragged to — fixed once set, independent of later crew moves. */
-  tillerSide: -1 | 0 | 1;
-  onTillerSideChange: (s: -1 | 1) => void;
-  tillerFeedback?: "correct" | "incorrect";
-  crewSide: -1 | 0 | 1;
-  onCrewSideChange: (s: -1 | 1) => void;
-  disabled: boolean;
-}) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [draggingTelltale, setDraggingTelltale] = useState(false);
-  const [draggingTiller, setDraggingTiller] = useState(false);
-
-  const nd = normalizeDeg(heading);
-  const rad = (nd * Math.PI) / 180;
-  const tipX = MAST_X + INDICATOR_LEN * Math.sin(rad);
-  const tipY = MAST_Y + INDICATOR_LEN * Math.cos(rad);
-  const lean = leanOf(heading);
-  const mag = trimMagnitude(Math.abs(nd));
-  const jibOut = lean * mag * 0.55;
-  const mainOut = lean * mag;
-
-  // Tiller pivots at the rudder head (the stern point) and sweeps forward,
-  // into the cockpit — centered when neutral, arcing toward a rail when pushed/pulled.
-  // It stays wherever it was dragged even if the skipper dot moves afterward —
-  // e.g. on a tack, you push it toward the rail you're about to move to, so it
-  // should end up on the same side as the dot, not flip when the dot moves.
-  const TILLER_LEN = 26;
-  const tillerAngle = (tillerSide * 32 * Math.PI) / 180;
-  const tillerX = STERN_X + TILLER_LEN * Math.sin(tillerAngle);
-  const tillerY = STERN_Y - TILLER_LEN * Math.cos(tillerAngle);
-  const tillerColor = tillerFeedback === "correct" ? "var(--good)" : tillerFeedback === "incorrect" ? "var(--bad)" : "#c8973a";
-
-  function clientToPoint(clientX: number, clientY: number) {
-    const svg = svgRef.current;
-    if (!svg) return null;
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return null;
-    return pt.matrixTransform(ctm.inverse());
-  }
-
-  function angleFromClient(clientX: number, clientY: number): number {
-    const loc = clientToPoint(clientX, clientY);
-    if (!loc) return heading;
-    const angle = (Math.atan2(loc.x - MAST_X, loc.y - MAST_Y) * 180) / Math.PI;
-    return snapToPreset(angle);
-  }
-
-  function startTelltaleDrag(e: React.PointerEvent) {
-    if (disabled) return;
-    setDraggingTelltale(true);
-    (e.target as Element).setPointerCapture(e.pointerId);
-    onHeadingChange(angleFromClient(e.clientX, e.clientY));
-  }
-  function moveTelltaleDrag(e: React.PointerEvent) {
-    if (!draggingTelltale || disabled) return;
-    onHeadingChange(angleFromClient(e.clientX, e.clientY));
-  }
-
-  function tillerSideFromClient(clientX: number, clientY: number): -1 | 1 {
-    const loc = clientToPoint(clientX, clientY);
-    if (!loc) return -1;
-    return loc.x < STERN_X ? -1 : 1;
-  }
-  function startTillerDrag(e: React.PointerEvent) {
-    if (disabled) return;
-    setDraggingTiller(true);
-    (e.target as Element).setPointerCapture(e.pointerId);
-    onTillerSideChange(tillerSideFromClient(e.clientX, e.clientY));
-  }
-  function moveTillerDrag(e: React.PointerEvent) {
-    if (!draggingTiller || disabled) return;
-    onTillerSideChange(tillerSideFromClient(e.clientX, e.clientY));
-  }
-
-  function endDrag() {
-    setDraggingTelltale(false);
-    setDraggingTiller(false);
-  }
-
-  return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-      style={{ display: "block", width: "100%", maxWidth: 380, height: "auto", margin: "0 auto", touchAction: "none" }}
-      onPointerMove={(e) => {
-        moveTelltaleDrag(e);
-        moveTillerDrag(e);
-      }}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    >
-      <path d={HULL} fill="#e4ede8" stroke="#20302c" strokeWidth={1.8} />
-
-      <line x1={MAST_X} y1={122} x2={MAST_X} y2={MAST_Y} stroke="#20302c" strokeWidth={1} opacity={0.5} />
-      <path d={`M100,126 Q${(100 + jibOut).toFixed(1)},140 100,148`} fill="none" stroke="#20302c" strokeWidth={1.4} opacity={0.85} />
-      <path d={`M100,150 Q${(100 + mainOut).toFixed(1)},160 100,172`} fill="none" stroke="#20302c" strokeWidth={1.4} opacity={0.85} />
-
-      {/* skipper — click an arrow to move to the other rail */}
-      <circle cx={MAST_X + crewSide * 14} cy={164} r={4.5} fill="#0f3d3e" stroke="#fff" strokeWidth={1} />
-      <polygon
-        points="52,164 66,158 66,170"
-        fill={crewSide === -1 ? "#0f3d3e" : "#b7c4bd"}
-        style={{ cursor: disabled ? "default" : "pointer" }}
-        onClick={disabled ? undefined : () => onCrewSideChange(-1)}
-      />
-      <polygon
-        points="148,164 134,158 134,170"
-        fill={crewSide === 1 ? "#0f3d3e" : "#b7c4bd"}
-        style={{ cursor: disabled ? "default" : "pointer" }}
-        onClick={disabled ? undefined : () => onCrewSideChange(1)}
-      />
-
-      <circle cx={MAST_X} cy={MAST_Y} r={3.5} fill="#20302c" />
-      <line x1={MAST_X} y1={MAST_Y} x2={tipX} y2={tipY} stroke="#c8973a" strokeWidth={3} strokeLinecap="round" />
-      <circle
-        cx={tipX}
-        cy={tipY}
-        r={draggingTelltale ? 13 : 10}
-        fill="#c8973a"
-        opacity={disabled ? 0.9 : 0.35}
-        stroke="#c8973a"
-        strokeWidth={1.5}
-        style={{ cursor: disabled ? "default" : draggingTelltale ? "grabbing" : "grab" }}
-        onPointerDown={startTelltaleDrag}
-      />
-      <circle cx={tipX} cy={tipY} r={4} fill="#c8973a" style={{ pointerEvents: "none" }} />
-
-      {/* tiller, pivoting at the transom */}
-      <circle cx={STERN_X} cy={STERN_Y} r={3} fill="#20302c" />
-      <line x1={STERN_X} y1={STERN_Y} x2={tillerX} y2={tillerY} stroke={tillerColor} strokeWidth={4} strokeLinecap="round" />
-      <circle
-        cx={tillerX}
-        cy={tillerY}
-        r={draggingTiller ? 13 : 10}
-        fill={tillerColor}
-        opacity={disabled ? 0.9 : 0.35}
-        style={{ cursor: disabled ? "default" : draggingTiller ? "grabbing" : "grab" }}
-        onPointerDown={startTillerDrag}
-      />
-    </svg>
-  );
 }
 
 interface FieldResult {
@@ -350,6 +123,7 @@ export default function ManeuverGame() {
   const [submitted, setSubmitted] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [missedIds, setMissedIds] = useState<Set<string>>(new Set());
 
   const needsSheet = scenario.sheet !== null;
   const expectedCrew = windwardOf(scenario.targetHeading);
@@ -379,11 +153,17 @@ export default function ManeuverGame() {
     setSubmitted(true);
     const allOk = results().every((r) => r.ok);
     if (allOk) setCorrectCount((n) => n + 1);
+    setMissedIds((prev) => {
+      const next = new Set(prev);
+      if (allOk) next.delete(scenario.id);
+      else next.add(scenario.id);
+      return next;
+    });
   }
 
-  function handleTillerSideChange(side: -1 | 1) {
+  function handleTillerSideChange(side: -1 | 0 | 1) {
     setTillerSide(side);
-    setUserTiller(side === tillerReference ? "Pull Tiller Toward You" : "Push Tiller Away");
+    setUserTiller(side === 0 ? null : side === tillerReference ? "Pull Tiller Toward You" : "Push Tiller Away");
   }
 
   function loadQuestion(s: Scenario) {
@@ -403,7 +183,19 @@ export default function ManeuverGame() {
     setIndex(0);
     setCorrectCount(0);
     setFinished(false);
+    setMissedIds(new Set());
     loadQuestion(shuffled[0]);
+  }
+
+  function retryMissed() {
+    const retryScenarios = shuffle([...missedIds].map((id) => SCENARIO_BY_ID[id]).filter((s): s is Scenario => !!s));
+    if (retryScenarios.length === 0) return;
+    setQuestions(retryScenarios);
+    setIndex(0);
+    setCorrectCount(0);
+    setFinished(false);
+    setMissedIds(new Set());
+    loadQuestion(retryScenarios[0]);
   }
 
   function next() {
@@ -469,15 +261,35 @@ export default function ManeuverGame() {
             {correctCount} / {questions.length} fully correct (
             {Math.round((correctCount / questions.length) * 100)}%)
           </div>
-          <button className="btn btn-primary" onClick={() => startRound(mode)}>
-            Retake
-          </button>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            {missedIds.size > 0 && (
+              <button className="btn btn-primary" onClick={retryMissed}>
+                Retry Missed ({missedIds.size})
+              </button>
+            )}
+            <button className="btn" onClick={() => startRound(mode)}>
+              Retake
+            </button>
+          </div>
         </div>
       ) : (
         <>
-          <div className="callout" style={{ marginBottom: 14 }}>
-            You're currently on <b>{headingName(scenario.startHeading)}</b>. Get to{" "}
-            <b>{headingName(scenario.targetHeading)}</b>.
+          <div className="callout" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span>
+              You're currently on <b>{headingName(scenario.startHeading)}</b>. Get to{" "}
+              <b>{headingName(scenario.targetHeading)}</b>.
+            </span>
+            {!submitted && (
+              <button
+                className="btn"
+                onClick={() => loadQuestion(scenario)}
+                title="Reset the diagram back to the starting point"
+                aria-label="Reset diagram"
+                style={{ padding: "4px 8px", fontSize: "1rem", lineHeight: 1, flexShrink: 0 }}
+              >
+                ↺
+              </button>
+            )}
           </div>
 
           <BoatDiagram
