@@ -27,7 +27,7 @@ export const HULL_LABEL_POINTS: LabelPoint[] = [
 
 export const RIG_LABEL_POINTS: LabelPoint[] = [
   { id: "mast", x: 300, y: 210 },
-  { id: "boom", x: 220, y: 373 },
+  { id: "boom", x: 220, y: 320 },
   { id: "spreader", x: 320, y: 180 },
   { id: "mainsail", x: 200, y: 280 },
   { id: "jib", x: 360, y: 280 },
@@ -140,18 +140,18 @@ function RigArt() {
         strokeWidth={1.5}
       />
 
-      {/* mainsail, roached leech curving aft */}
+      {/* mainsail, roached leech curving aft — boom sits well clear of the deck, gooseneck partway up the mast */}
       <path
-        d="M300,50 L300,377 L145,375 Q185,217 300,50 Z"
+        d="M300,50 L300,320 L145,320 Q185,188 300,50 Z"
         fill="#eef4f0"
         fillOpacity={0.9}
         stroke="#1f6f6b"
         strokeWidth={1.5}
       />
 
-      {/* boom */}
-      <line x1={300} y1={375} x2={145} y2={375} stroke="#20302c" strokeWidth={3.5} strokeLinecap="round" />
-      {/* mast */}
+      {/* boom — thicker than the mast, reads as a stouter spar */}
+      <line x1={300} y1={320} x2={145} y2={320} stroke="#20302c" strokeWidth={5.5} strokeLinecap="round" />
+      {/* mast — continues down to the deck below the boom */}
       <line x1={300} y1={377} x2={300} y2={48} stroke="#20302c" strokeWidth={4} strokeLinecap="round" />
       {/* spreader */}
       <line x1={260} y1={180} x2={340} y2={180} stroke="#20302c" strokeWidth={3} strokeLinecap="round" />
