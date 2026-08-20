@@ -7,7 +7,8 @@ import { MANEUVER_LABELS, type Maneuver } from "./PointsOfSailDiagram";
  * tiller and (when unambiguous) the sheet, move yourself to the new
  * windward rail if the tack changed, then name the maneuver. Unlike the
  * direction drill, every part of this one is checkable, so it grades for
- * real.
+ * real. Easy mode is one move per question; Hard mode mixes in
+ * multi-move chains (e.g. head up, then tack).
  */
 const VIEW_W = 200;
 const VIEW_H = 195;
@@ -18,6 +19,7 @@ const HULL = "M84,174 L116,174 Q122,146 100,122 Q78,146 84,174 Z";
 const STERN_X = 100;
 const STERN_Y = 174;
 const PRESETS = [0, -45, 45, -90, 90, -135, 135, 180] as const;
+const ROUND_SIZE = 6;
 
 const TRIM_STOPS: [number, number][] = [
   [0, 0],
@@ -82,9 +84,7 @@ const TILLER_CHOICES = ["Push Tiller Away", "Pull Tiller Toward You"] as const;
 const SHEET_CHOICES = ["Sheet In", "Ease (Sheet Out)"] as const;
 const MANEUVER_OPTIONS: Maneuver[] = ["tack", "jibe", "headUp", "fallOff"];
 
-interface Scenario {
-  id: string;
-  startHeading: number;
+interface Leg {
   targetHeading: number;
   maneuver: Maneuver;
   tiller: (typeof TILLER_CHOICES)[number];
@@ -92,17 +92,64 @@ interface Scenario {
   sheet: (typeof SHEET_CHOICES)[number] | null;
 }
 
-const SCENARIOS: Scenario[] = [
-  { id: "headup-1", startHeading: -90, targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
-  { id: "falloff-1", startHeading: 135, targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-  { id: "headup-2", startHeading: 90, targetHeading: 45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
-  { id: "falloff-2", startHeading: -90, targetHeading: -135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-  { id: "tack-1", startHeading: -45, targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
-  { id: "jibe-1", startHeading: 135, targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null },
+interface Scenario {
+  id: string;
+  startHeading: number;
+  legs: Leg[];
+}
+
+const BASIC_SCENARIOS: Scenario[] = [
+  { id: "headup-1", startHeading: -90, legs: [{ targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" }] },
+  { id: "falloff-1", startHeading: 135, legs: [{ targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" }] },
+  { id: "headup-2", startHeading: 90, legs: [{ targetHeading: 45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" }] },
+  { id: "falloff-2", startHeading: -90, legs: [{ targetHeading: -135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" }] },
+  { id: "tack-1", startHeading: -45, legs: [{ targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null }] },
+  { id: "jibe-1", startHeading: 135, legs: [{ targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null }] },
 ];
 
-function pickScenario(excludeId: string | null): Scenario {
-  const choices = excludeId ? SCENARIOS.filter((s) => s.id !== excludeId) : SCENARIOS;
+const ADVANCED_SCENARIOS: Scenario[] = [
+  {
+    id: "chain-headup-tack",
+    startHeading: -90,
+    legs: [
+      { targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
+      { targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
+    ],
+  },
+  {
+    id: "chain-falloff-jibe",
+    startHeading: 135,
+    legs: [
+      { targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
+      { targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null },
+    ],
+  },
+  {
+    id: "chain-double-falloff",
+    startHeading: 45,
+    legs: [
+      { targetHeading: 90, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
+      { targetHeading: 135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
+    ],
+  },
+  {
+    id: "chain-tack-falloff",
+    startHeading: -45,
+    legs: [
+      { targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
+      { targetHeading: 90, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
+    ],
+  },
+];
+
+type Mode = "easy" | "hard";
+
+function poolFor(mode: Mode): Scenario[] {
+  return mode === "easy" ? BASIC_SCENARIOS : [...BASIC_SCENARIOS, ...ADVANCED_SCENARIOS];
+}
+
+function pickScenario(pool: Scenario[], excludeId: string | null): Scenario {
+  const choices = excludeId ? pool.filter((s) => s.id !== excludeId) : pool;
   return choices[Math.floor(Math.random() * choices.length)];
 }
 
@@ -282,27 +329,35 @@ interface FieldResult {
 }
 
 export default function ManeuverGame() {
-  const [scenario, setScenario] = useState<Scenario>(() => pickScenario(null));
+  const [mode, setMode] = useState<Mode>("easy");
+  const [scenario, setScenario] = useState<Scenario>(() => pickScenario(poolFor("easy"), null));
+  const [legIndex, setLegIndex] = useState(0);
   const [userHeading, setUserHeading] = useState(scenario.startHeading);
   const [userTiller, setUserTiller] = useState<string | null>(null);
   const [userSheet, setUserSheet] = useState<string | null>(null);
   const [userManeuver, setUserManeuver] = useState<Maneuver | null>(null);
   const [crewSide, setCrewSide] = useState<-1 | 0 | 1>(() => windwardOf(scenario.startHeading));
   const [submitted, setSubmitted] = useState(false);
-  const [tally, setTally] = useState({ correct: 0, attempted: 0 });
+  const [scenarioOkSoFar, setScenarioOkSoFar] = useState(true);
+  const [roundCorrect, setRoundCorrect] = useState(0);
+  const [roundAttempted, setRoundAttempted] = useState(0);
 
-  const needsSheet = scenario.sheet !== null;
-  const expectedCrew = windwardOf(scenario.targetHeading);
+  const leg = scenario.legs[legIndex];
+  const legStart = legIndex === 0 ? scenario.startHeading : scenario.legs[legIndex - 1].targetHeading;
+  const isLastLeg = legIndex === scenario.legs.length - 1;
+  const needsSheet = leg.sheet !== null;
+  const expectedCrew = windwardOf(leg.targetHeading);
   const canCheck = userTiller !== null && userManeuver !== null && (!needsSheet || userSheet !== null);
+  const roundComplete = roundAttempted >= ROUND_SIZE;
 
   function results(): FieldResult[] {
     const out: FieldResult[] = [
-      { ok: userHeading === scenario.targetHeading, label: `Telltale → ${headingName(scenario.targetHeading)}` },
-      { ok: userTiller === scenario.tiller, label: `Tiller → ${scenario.tiller}` },
+      { ok: userHeading === leg.targetHeading, label: `Telltale → ${headingName(leg.targetHeading)}` },
+      { ok: userTiller === leg.tiller, label: `Tiller → ${leg.tiller}` },
     ];
     if (expectedCrew !== 0) out.push({ ok: crewSide === expectedCrew, label: "Crew → Windward rail" });
-    out.push({ ok: userManeuver === scenario.maneuver, label: `Move → ${MANEUVER_LABELS[scenario.maneuver]}` });
-    if (needsSheet) out.push({ ok: userSheet === scenario.sheet, label: `Sheet → ${scenario.sheet}` });
+    out.push({ ok: userManeuver === leg.maneuver, label: `Move → ${MANEUVER_LABELS[leg.maneuver]}` });
+    if (needsSheet) out.push({ ok: userSheet === leg.sheet, label: `Sheet → ${leg.sheet}` });
     return out;
   }
 
@@ -310,18 +365,41 @@ export default function ManeuverGame() {
     if (!canCheck) return;
     setSubmitted(true);
     const allOk = results().every((r) => r.ok);
-    setTally((t) => ({ correct: t.correct + (allOk ? 1 : 0), attempted: t.attempted + 1 }));
+    if (!allOk) setScenarioOkSoFar(false);
   }
 
-  function next() {
-    const s = pickScenario(scenario.id);
+  function startScenario(s: Scenario) {
     setScenario(s);
+    setLegIndex(0);
     setUserHeading(s.startHeading);
     setUserTiller(null);
     setUserSheet(null);
     setUserManeuver(null);
     setCrewSide(windwardOf(s.startHeading));
     setSubmitted(false);
+    setScenarioOkSoFar(true);
+  }
+
+  function startRound(newMode: Mode) {
+    setMode(newMode);
+    setRoundCorrect(0);
+    setRoundAttempted(0);
+    startScenario(pickScenario(poolFor(newMode), null));
+  }
+
+  function next() {
+    if (!isLastLeg) {
+      setLegIndex((i) => i + 1);
+      setUserHeading(leg.targetHeading);
+      setUserTiller(null);
+      setUserSheet(null);
+      setUserManeuver(null);
+      setSubmitted(false);
+      return;
+    }
+    setRoundAttempted((n) => n + 1);
+    if (scenarioOkSoFar) setRoundCorrect((n) => n + 1);
+    startScenario(pickScenario(poolFor(mode), scenario.id));
   }
 
   const fieldResults = submitted ? results() : null;
@@ -339,106 +417,154 @@ export default function ManeuverGame() {
     return { borderColor: "var(--line)", background: "var(--paper-card)" };
   }
 
+  function modeButtonStyle(m: Mode) {
+    return {
+      borderColor: mode === m ? "var(--deep)" : "var(--line)",
+      background: mode === m ? "#eaf0ee" : "var(--paper-card)",
+      fontWeight: mode === m ? "bold" : "normal",
+    } as const;
+  }
+
   return (
     <div className="card" style={{ marginBottom: 20 }}>
       <div className="eyebrow" style={{ marginBottom: 10 }}>
         Maneuver practice — telltale, tiller, sheet, and the move
       </div>
 
-      <div className="callout" style={{ marginBottom: 14 }}>
-        You're currently on <b>{headingName(scenario.startHeading)}</b>. Get to{" "}
-        <b>{headingName(scenario.targetHeading)}</b>.
-      </div>
-
-      <BoatDiagram
-        heading={userHeading}
-        onHeadingChange={setUserHeading}
-        tillerValue={userTiller}
-        onTillerChange={setUserTiller}
-        tillerFeedback={submitted ? (userTiller === scenario.tiller ? "correct" : "incorrect") : undefined}
-        tillerWindward={(crewSide || 1) as -1 | 1}
-        crewSide={crewSide}
-        onCrewSideChange={setCrewSide}
-        disabled={submitted}
-      />
-      <div style={{ textAlign: "center", fontSize: "0.78rem", color: "var(--muted)", marginTop: 4, marginBottom: 16 }}>
-        {submitted
-          ? "Locked in"
-          : "Drag the gold telltale to your target heading, drag the tiller, and use the arrows to move to the new windward rail if you changed tacks"}
-      </div>
-
-      {needsSheet && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: "0.78rem", color: "var(--label)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-            Sheet
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {SHEET_CHOICES.map((c) => (
-              <button
-                key={c}
-                className="btn"
-                disabled={submitted}
-                onClick={() => setUserSheet(c)}
-                style={{ flex: "1 1 160px", ...choiceStyle(userSheet === c, submitted && scenario.sheet === c) }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: "0.78rem", color: "var(--label)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-          Which move is this?
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {MANEUVER_OPTIONS.map((m) => (
-            <button
-              key={m}
-              className="btn"
-              disabled={submitted}
-              onClick={() => setUserManeuver(m)}
-              style={{ flex: "1 1 100px", ...choiceStyle(userManeuver === m, submitted && scenario.maneuver === m) }}
-            >
-              {MANEUVER_LABELS[m]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {!submitted ? (
-        <button className="btn btn-primary btn-block" disabled={!canCheck} onClick={check}>
-          Check
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+        <span style={{ fontSize: "0.78rem", color: "var(--label)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Mode
+        </span>
+        <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("easy") }} onClick={() => mode !== "easy" && startRound("easy")}>
+          Easy · 1 move
         </button>
+        <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("hard") }} onClick={() => mode !== "hard" && startRound("hard")}>
+          Hard · 1-2 moves
+        </button>
+        {!roundComplete && (
+          <span style={{ marginLeft: "auto", fontSize: "0.78rem", color: "var(--muted)" }}>
+            Question {roundAttempted + 1} of {ROUND_SIZE}
+          </span>
+        )}
+      </div>
+
+      {roundComplete ? (
+        <div className="callout" style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 6 }}>Round complete!</div>
+          <div style={{ marginBottom: 14 }}>
+            {roundCorrect} / {ROUND_SIZE} fully correct
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="btn btn-primary" onClick={() => startRound(mode)}>
+              Play Again
+            </button>
+            <button className="btn" onClick={() => startRound(mode === "easy" ? "hard" : "easy")}>
+              {mode === "easy" ? "Try Hard Mode →" : "Back to Easy Mode"}
+            </button>
+          </div>
+        </div>
       ) : (
         <>
-          <div
-            className="callout"
-            style={{
-              marginBottom: 12,
-              borderLeftColor: allCorrect ? "var(--good)" : "var(--bad)",
-              color: allCorrect ? "var(--good)" : "var(--bad)",
-            }}
-          >
-            <b>{allCorrect ? "All correct!" : "Not quite — check the highlights above."}</b>
-            <div style={{ marginTop: 6, color: "var(--muted-strong)", fontWeight: "normal" }}>
-              {fieldResults!.map((r) => (
-                <div key={r.label}>
-                  {r.ok ? "✓" : "✗"} {r.label}
-                </div>
+          <div className="callout" style={{ marginBottom: 14 }}>
+            You're currently on <b>{headingName(legStart)}</b>. Get to <b>{headingName(leg.targetHeading)}</b>.
+            {scenario.legs.length > 1 && (
+              <span style={{ marginLeft: 8, fontSize: "0.78rem", color: "var(--muted)" }}>
+                (Step {legIndex + 1} of {scenario.legs.length})
+              </span>
+            )}
+          </div>
+
+          <BoatDiagram
+            heading={userHeading}
+            onHeadingChange={setUserHeading}
+            tillerValue={userTiller}
+            onTillerChange={setUserTiller}
+            tillerFeedback={submitted ? (userTiller === leg.tiller ? "correct" : "incorrect") : undefined}
+            tillerWindward={(crewSide || 1) as -1 | 1}
+            crewSide={crewSide}
+            onCrewSideChange={setCrewSide}
+            disabled={submitted}
+          />
+          <div style={{ textAlign: "center", fontSize: "0.78rem", color: "var(--muted)", marginTop: 4, marginBottom: 16 }}>
+            {submitted
+              ? "Locked in"
+              : "Drag the gold telltale to your target heading, drag the tiller, and use the arrows to move to the new windward rail if you changed tacks"}
+          </div>
+
+          {needsSheet && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: "0.78rem", color: "var(--label)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                Sheet
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {SHEET_CHOICES.map((c) => (
+                  <button
+                    key={c}
+                    className="btn"
+                    disabled={submitted}
+                    onClick={() => setUserSheet(c)}
+                    style={{ flex: "1 1 160px", ...choiceStyle(userSheet === c, submitted && leg.sheet === c) }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: "0.78rem", color: "var(--label)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+              Which move is this?
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {MANEUVER_OPTIONS.map((m) => (
+                <button
+                  key={m}
+                  className="btn"
+                  disabled={submitted}
+                  onClick={() => setUserManeuver(m)}
+                  style={{ flex: "1 1 100px", ...choiceStyle(userManeuver === m, submitted && leg.maneuver === m) }}
+                >
+                  {MANEUVER_LABELS[m]}
+                </button>
               ))}
             </div>
           </div>
-          <button className="btn btn-primary btn-block" onClick={next}>
-            Next
-          </button>
+
+          {!submitted ? (
+            <button className="btn btn-primary btn-block" disabled={!canCheck} onClick={check}>
+              Check
+            </button>
+          ) : (
+            <>
+              <div
+                className="callout"
+                style={{
+                  marginBottom: 12,
+                  borderLeftColor: allCorrect ? "var(--good)" : "var(--bad)",
+                  color: allCorrect ? "var(--good)" : "var(--bad)",
+                }}
+              >
+                <b>{allCorrect ? "All correct!" : "Not quite — check the highlights above."}</b>
+                <div style={{ marginTop: 6, color: "var(--muted-strong)", fontWeight: "normal" }}>
+                  {fieldResults!.map((r) => (
+                    <div key={r.label}>
+                      {r.ok ? "✓" : "✗"} {r.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button className="btn btn-primary btn-block" onClick={next}>
+                {isLastLeg ? "Next Question →" : "Next Move →"}
+              </button>
+            </>
+          )}
+
+          <div style={{ marginTop: 12, fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>
+            {roundCorrect} / {roundAttempted} fully correct this round
+          </div>
         </>
       )}
-
-      <div style={{ marginTop: 12, fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>
-        {tally.correct} / {tally.attempted} fully correct this session
-      </div>
     </div>
   );
 }
