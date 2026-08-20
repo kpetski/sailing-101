@@ -6,6 +6,7 @@ import type { TopicId } from "../data/types";
 import PointsOfSailDiagram from "../components/PointsOfSailDiagram";
 import LabelDiagram, { HULL_LABEL_POINTS, RIG_LABEL_POINTS, type LabelPoint } from "../components/LabelDiagram";
 import PhotoLabelStudio from "../components/PhotoLabelStudio";
+import DirectionDrill from "../components/DirectionDrill";
 import { SkipperViewIcon, SKIPPER_VIEW_POINTS } from "../components/SkipperView";
 import { shuffle } from "../lib/shuffle";
 import styles from "./TopicReference.module.css";
@@ -286,6 +287,7 @@ export default function TopicReference() {
           <PhotoLabelStudio variant="hull" terms={pointsToTerms(HULL_LABEL_POINTS)} />
           <LabelPractice variant="hull" points={HULL_LABEL_POINTS} />
           <LabelMatchGame variant="hull" points={HULL_LABEL_POINTS} />
+          <DirectionDrill />
         </>
       )}
       {topic.id === "rig" && (

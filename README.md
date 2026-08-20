@@ -83,23 +83,21 @@ To add new photos/pages from your textbook: just add more entries to
 reference page for that topic (`src/pages/TopicReference.tsx`) picks them
 up automatically.
 
-- **`src/components/LabelDiagram.tsx`** — the hull diagram is original
-  schematic art, *not* traced from any textbook image. The rig diagram is a
-  real illustration (`public/diagrams/sailboat-rig.png`, credit: Image by
-  [Clker-Free-Vector-Images](https://pixabay.com/users/clker-free-vector-images-3736/)
-  from [Pixabay](https://pixabay.com/vectors/diagram-sailboat-sailing-points-31693/),
-  used under the [Pixabay Content License](https://pixabay.com/service/license-summary/)
-  — free for public/commercial use, modification, and redistribution, no
-  attribution required, credited here anyway) with three added elements
-  (spreader, backstay, shrouds) drawn in a matching line style, since the
-  source daysailer rig doesn't have them. Both diagrams use named label
-  points (`HULL_LABEL_POINTS`, `RIG_LABEL_POINTS`) whose `id`s match term
-  ids in `terms.ts`, powering the "tap a dot to reveal its name" practice
-  section, the "match all the labels" game, and the "what is the
-  highlighted part called?" quiz questions. To add a new labeled part: add
-  the term to `terms.ts`, then add `{ id, x, y }` to the matching points
-  array here (coordinates are in the SVG's own coordinate space —
-  `HullArt`/`RigArt` show the viewBox each uses).
+- **`src/components/LabelDiagram.tsx`** — both the hull and rig diagrams are
+  original schematic art, *not* traced from any textbook image. The rig
+  diagram briefly used a real Pixabay-licensed illustration instead, but
+  went back to a drawn diagram (a simplified hull grounds a full sloop rig —
+  mast, boom, mainsail, jib, spreader, and the three standing-rigging wires)
+  since a from-scratch drawing can look like an actual keelboat, be sized
+  and posed exactly how the label points need, and needs no license
+  tracking. Both diagrams use named label points (`HULL_LABEL_POINTS`,
+  `RIG_LABEL_POINTS`) whose `id`s match term ids in `terms.ts`, powering the
+  "tap a dot to reveal its name" practice section, the "match all the
+  labels" game, and the "what is the highlighted part called?" quiz
+  questions. To add a new labeled part: add the term to `terms.ts`, then add
+  `{ id, x, y }` to the matching points array here (coordinates are in the
+  SVG's own coordinate space — `HullArt`/`RigArt` show the viewBox each
+  uses).
 
 ## Using your own textbook photos (local only)
 
@@ -129,13 +127,11 @@ nothing under `local-assets/` is ever imported by app code (it's fetched by
 URL at runtime), so there's no path by which it ends up in `dist/` or the
 `gh-pages` branch.
 
-**Update:** found a good license-compatible match for the rig diagram (see
-"How it's built" above) and swapped it in. The hull diagram is still
-original schematic art — the Pixabay source is an open dinghy with a
-centerboard, not a keelboat, so it's missing a cabin trunk/companionway/true
-cockpit and doesn't fit the hull page's term set. **TODO (someday):** look
-for (or draw) a small-*keelboat*-specific hull diagram — public domain,
-CC0, or a license as permissive as Pixabay's — that actually has a cabin.
+**Update:** briefly swapped in a license-compatible real illustration for the
+rig diagram, then went back to original schematic art for both diagrams (see
+"How it's built" above) — the real illustration was an open dinghy with a
+centerboard, not a keelboat, so it was missing a cabin trunk and didn't
+match the rest of the hull page's term set or look.
 
 ## How it's built
 

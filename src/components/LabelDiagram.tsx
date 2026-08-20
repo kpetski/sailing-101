@@ -26,18 +26,18 @@ export const HULL_LABEL_POINTS: LabelPoint[] = [
 ];
 
 export const RIG_LABEL_POINTS: LabelPoint[] = [
-  { id: "mast", x: 755, y: 480 },
-  { id: "boom", x: 420, y: 968 },
-  { id: "spreader", x: 700, y: 300 },
-  { id: "mainsail", x: 480, y: 560 },
-  { id: "jib", x: 860, y: 650 },
-  { id: "forestay", x: 830, y: 330 },
-  { id: "backstay", x: 420, y: 480 },
-  { id: "shrouds", x: 620, y: 640 },
+  { id: "mast", x: 300, y: 210 },
+  { id: "boom", x: 220, y: 373 },
+  { id: "spreader", x: 320, y: 180 },
+  { id: "mainsail", x: 200, y: 280 },
+  { id: "jib", x: 360, y: 280 },
+  { id: "forestay", x: 364, y: 221 },
+  { id: "backstay", x: 145, y: 295 },
+  { id: "shrouds", x: 283, y: 278 },
 ];
 
 const HULL_VIEWBOX = "0 -200 500 470";
-const RIG_VIEWBOX = "0 0 1201 1280";
+const RIG_VIEWBOX = "0 0 480 560";
 
 function HullArt() {
   return (
@@ -107,24 +107,62 @@ function HullArt() {
 }
 
 /**
- * Real illustration (Pixabay Content License — free for public/commercial
- * use, no attribution required, modification/redistribution permitted;
- * https://pixabay.com/service/license-summary/), credited in README.md.
- * The source drawing doesn't include a spreader, backstay, or shrouds (it's
- * a simple daysailer rig), so those three are added here as an overlay in a
- * matching line style — everything else (mast, boom, mainsail, jib,
- * forestay) is the original illustration.
+ * Original schematic art (not traced from any textbook image), same spirit
+ * as HullArt — a simplified hull profile grounds a full sloop rig: mast,
+ * boom, mainsail and jib (both with a curved, roached leech rather than a
+ * straight line), spreader, and the three standing-rigging wires.
  */
 function RigArt() {
   return (
     <>
-      <image href={`${import.meta.env.BASE_URL}diagrams/sailboat-rig.png`} x={0} y={0} width={1201} height={1280} />
-      {/* spreader — added: a strut crossing the mast partway up */}
-      <line x1={655} y1={300} x2={855} y2={300} stroke="#20302c" strokeWidth={5} strokeLinecap="round" />
-      {/* shroud — added: mast (at spreader height) down to a mid-deck chainplate; dashed to read as "behind" the sail */}
-      <line x1={745} y1={305} x2={560} y2={975} stroke="#20302c" strokeWidth={2} strokeDasharray="10,6" opacity={0.75} />
-      {/* backstay — added: masthead down to the stern; dashed to read as "behind" the sail */}
-      <line x1={752} y1={30} x2={230} y2={945} stroke="#20302c" strokeWidth={2} strokeDasharray="10,6" opacity={0.75} />
+      {/* hull — same silhouette as HullArt, scaled down to ground the rig; full hull detail lives on the Boat Nomenclature page */}
+      <path
+        d="M69,405 L74,463 Q144,484 265,486 Q360,486 380,469 L435,432 L453,408 L418,384 Q288,370 153,375 Q93,378 69,405 Z"
+        fill="#e4ede8"
+        stroke="#20302c"
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+
+      {/* backstay — masthead to stern, dashed to read as "behind" the sail */}
+      <line x1={300} y1={50} x2={78} y2={400} stroke="#20302c" strokeWidth={1.4} strokeDasharray="8,5" opacity={0.7} />
+      {/* shroud — spreader tip down to a deck chainplate, dashed to read as "behind" the sail */}
+      <line x1={340} y1={180} x2={225} y2={376} stroke="#20302c" strokeWidth={1.4} strokeDasharray="8,5" opacity={0.7} />
+      {/* forestay — masthead to the bow, doubles as the jib's luff */}
+      <line x1={300} y1={50} x2={428} y2={392} stroke="#20302c" strokeWidth={1.4} opacity={0.7} />
+
+      {/* jib, roached leech curving in toward the mast */}
+      <path
+        d="M300,50 L428,392 L335,379 Q302,217 300,50 Z"
+        fill="#eef4f0"
+        fillOpacity={0.9}
+        stroke="#1f6f6b"
+        strokeWidth={1.5}
+      />
+
+      {/* mainsail, roached leech curving aft */}
+      <path
+        d="M300,50 L300,377 L145,375 Q185,217 300,50 Z"
+        fill="#eef4f0"
+        fillOpacity={0.9}
+        stroke="#1f6f6b"
+        strokeWidth={1.5}
+      />
+
+      {/* boom */}
+      <line x1={300} y1={375} x2={145} y2={375} stroke="#20302c" strokeWidth={3.5} strokeLinecap="round" />
+      {/* mast */}
+      <line x1={300} y1={377} x2={300} y2={48} stroke="#20302c" strokeWidth={4} strokeLinecap="round" />
+      {/* spreader */}
+      <line x1={260} y1={180} x2={340} y2={180} stroke="#20302c" strokeWidth={3} strokeLinecap="round" />
+
+      {/*
+        Cabin trunk and cockpit drawn last (on top of the sails) — deck
+        structures would read in front of the rig from this angle, and it
+        keeps them from disappearing under the jib's fill.
+      */}
+      <path d="M255,376 L262,356 L318,356 L325,376 Z" fill="#dcd3b8" stroke="#20302c" strokeWidth={1.5} strokeLinejoin="round" />
+      <path d="M160,378 Q205,394 250,378" fill="none" stroke="#8a8168" strokeWidth={1.5} strokeDasharray="3,3" />
     </>
   );
 }
@@ -160,7 +198,7 @@ export default function LabelDiagram({
   className,
 }: LabelDiagramProps) {
   const visiblePoints = activeId ? points.filter((p) => p.id === activeId) : points;
-  const viewBoxWidth = variant === "hull" ? 500 : 1201;
+  const viewBoxWidth = variant === "hull" ? 500 : 480;
 
   return (
     <svg
