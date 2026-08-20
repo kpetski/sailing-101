@@ -37,7 +37,10 @@ function trimMagnitude(absNd: number) {
 }
 
 function normalizeDeg(deg: number) {
-  return (((deg + 180) % 360) + 360) % 360 - 180;
+  const n = (((deg + 180) % 360) + 360) % 360 - 180;
+  // Keep dead-downwind headings at +180 rather than -180, so a fall-off from
+  // a port-tack broad reach to a run doesn't look like it flipped tacks.
+  return n === -180 ? 180 : n;
 }
 
 function snapToPreset(deg: number): number {
@@ -93,7 +96,7 @@ const SCENARIOS: Scenario[] = [
   { id: "headup-1", startHeading: -90, targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
   { id: "falloff-1", startHeading: 135, targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
   { id: "headup-2", startHeading: 90, targetHeading: 45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
-  { id: "falloff-2", startHeading: -135, targetHeading: -90, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
+  { id: "falloff-2", startHeading: -90, targetHeading: -135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
   { id: "tack-1", startHeading: -45, targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
   { id: "jibe-1", startHeading: 135, targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null },
 ];
@@ -115,6 +118,7 @@ function BoatDiagram({
   tillerValue,
   onTillerChange,
   tillerFeedback,
+  tillerWindward,
   crewSide,
   onCrewSideChange,
   disabled,
@@ -124,6 +128,8 @@ function BoatDiagram({
   tillerValue: string | null;
   onTillerChange: (v: string) => void;
   tillerFeedback?: "correct" | "incorrect";
+  /** Which rail the skipper dot is currently on — "toward you" means toward this side. */
+  tillerWindward: -1 | 1;
   crewSide: -1 | 0 | 1;
   onCrewSideChange: (s: -1 | 1) => void;
   disabled: boolean;
@@ -143,7 +149,10 @@ function BoatDiagram({
 
   // Tiller pivots at the rudder head (the stern point) and sweeps forward,
   // into the cockpit — centered when neutral, arcing toward a rail when pushed/pulled.
-  const tillerSide = tillerValue === "Pull Tiller Toward You" ? 1 : tillerValue === "Push Tiller Away" ? -1 : 0;
+  // "Toward you" is toward the windward rail, so which screen side that lands
+  // on depends on which tack you started the maneuver on.
+  const tillerSide =
+    tillerValue === "Pull Tiller Toward You" ? tillerWindward : tillerValue === "Push Tiller Away" ? -tillerWindward : 0;
   const TILLER_LEN = 26;
   const tillerAngle = (tillerSide * 32 * Math.PI) / 180;
   const tillerX = STERN_X + TILLER_LEN * Math.sin(tillerAngle);
@@ -185,7 +194,7 @@ function BoatDiagram({
     return loc.x < STERN_X ? -1 : 1;
   }
   function tillerAnswerFromSide(side: -1 | 1): string {
-    return side === 1 ? "Pull Tiller Toward You" : "Push Tiller Away";
+    return side === tillerWindward ? "Pull Tiller Toward You" : "Push Tiller Away";
   }
   function startTillerDrag(e: React.PointerEvent) {
     if (disabled) return;
@@ -347,6 +356,7 @@ export default function ManeuverGame() {
         tillerValue={userTiller}
         onTillerChange={setUserTiller}
         tillerFeedback={submitted ? (userTiller === scenario.tiller ? "correct" : "incorrect") : undefined}
+        tillerWindward={(crewSide || 1) as -1 | 1}
         crewSide={crewSide}
         onCrewSideChange={setCrewSide}
         disabled={submitted}
