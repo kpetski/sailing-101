@@ -7,8 +7,10 @@ import { MANEUVER_LABELS, type Maneuver } from "./PointsOfSailDiagram";
  * tiller and (when unambiguous) the sheet, move yourself to the new
  * windward rail if the tack changed, then name the maneuver. Unlike the
  * direction drill, every part of this one is checkable, so it grades for
- * real. Easy mode is one move per question; Hard mode mixes in
- * multi-move chains (e.g. head up, then tack).
+ * real. Easy mode only jumps one point of sail at a time; Hard mode can
+ * jump several points in a single question (e.g. Close Reach straight to
+ * a Run), so the telltale drag covers real distance and the maneuver name
+ * has to account for the whole turn, not just the last step of it.
  */
 const VIEW_W = 200;
 const VIEW_H = 195;
@@ -84,63 +86,65 @@ const TILLER_CHOICES = ["Push Tiller Away", "Pull Tiller Toward You"] as const;
 const SHEET_CHOICES = ["Sheet In", "Ease (Sheet Out)"] as const;
 const MANEUVER_OPTIONS: Maneuver[] = ["tack", "jibe", "headUp", "fallOff"];
 
-interface Leg {
-  targetHeading: number;
-  maneuver: Maneuver;
-  tiller: (typeof TILLER_CHOICES)[number];
-  /** null when start/target are symmetric (a mirror tack/jibe) — no well-defined net trim trend to grade. */
-  sheet: (typeof SHEET_CHOICES)[number] | null;
-}
-
 interface Scenario {
   id: string;
   startHeading: number;
-  legs: Leg[];
+  targetHeading: number;
+  maneuver: Maneuver;
+  tiller: (typeof TILLER_CHOICES)[number];
+  /** null when the turn is symmetric (a mirror tack/jibe) — no well-defined net trim trend to grade. */
+  sheet: (typeof SHEET_CHOICES)[number] | null;
 }
 
-const BASIC_SCENARIOS: Scenario[] = [
-  { id: "headup-1", startHeading: -90, legs: [{ targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" }] },
-  { id: "falloff-1", startHeading: 135, legs: [{ targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" }] },
-  { id: "headup-2", startHeading: 90, legs: [{ targetHeading: 45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" }] },
-  { id: "falloff-2", startHeading: -90, legs: [{ targetHeading: -135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" }] },
-  { id: "tack-1", startHeading: -45, legs: [{ targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null }] },
-  { id: "jibe-1", startHeading: 135, legs: [{ targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null }] },
+/**
+ * Works out what the whole turn from start to target is actually called —
+ * matching how sailors talk (a bear-away that carries on past the run is
+ * just "a jibe", not "fall off then jibe") — rather than hard-coding it
+ * per pair. Handles jumps of more than one point of sail the same way a
+ * single adjacent step works.
+ */
+function classifyTurn(start: number, target: number): Pick<Scenario, "maneuver" | "tiller" | "sheet"> {
+  const sameSide = start === 180 || target === 180 ? true : Math.sign(start) === Math.sign(target);
+  if (sameSide) {
+    const startMag = Math.abs(start);
+    const targetMag = Math.abs(target);
+    if (targetMag < startMag) return { maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" };
+    return { maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" };
+  }
+  const total = Math.abs(start) + Math.abs(target);
+  if (total < 180) return { maneuver: "tack", tiller: "Push Tiller Away", sheet: null };
+  return { maneuver: "jibe", tiller: "Push Tiller Away", sheet: null };
+}
+
+function buildScenario(id: string, startHeading: number, targetHeading: number): Scenario {
+  return { id, startHeading, targetHeading, ...classifyTurn(startHeading, targetHeading) };
+}
+
+// One point of sail at a time.
+const EASY_PAIRS: [number, number][] = [
+  [-90, -45],
+  [135, 180],
+  [90, 45],
+  [-90, -135],
+  [-45, 45],
+  [135, -135],
 ];
 
-const ADVANCED_SCENARIOS: Scenario[] = [
-  {
-    id: "chain-headup-tack",
-    startHeading: -90,
-    legs: [
-      { targetHeading: -45, maneuver: "headUp", tiller: "Push Tiller Away", sheet: "Sheet In" },
-      { targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
-    ],
-  },
-  {
-    id: "chain-falloff-jibe",
-    startHeading: 135,
-    legs: [
-      { targetHeading: 180, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-      { targetHeading: -135, maneuver: "jibe", tiller: "Push Tiller Away", sheet: null },
-    ],
-  },
-  {
-    id: "chain-double-falloff",
-    startHeading: 45,
-    legs: [
-      { targetHeading: 90, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-      { targetHeading: 135, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-    ],
-  },
-  {
-    id: "chain-tack-falloff",
-    startHeading: -45,
-    legs: [
-      { targetHeading: 45, maneuver: "tack", tiller: "Push Tiller Away", sheet: null },
-      { targetHeading: 90, maneuver: "fallOff", tiller: "Pull Tiller Toward You", sheet: "Ease (Sheet Out)" },
-    ],
-  },
+// Two or three points at once — the telltale has to travel real distance,
+// and the maneuver name has to describe the whole turn, not just the end of it.
+const HARD_PAIRS: [number, number][] = [
+  [-45, 180],
+  [180, -45],
+  [90, -45],
+  [-90, 45],
+  [45, -90],
+  [-90, 135],
+  [90, -135],
+  [45, 180],
 ];
+
+const BASIC_SCENARIOS: Scenario[] = EASY_PAIRS.map(([s, t], i) => buildScenario(`easy-${i}`, s, t));
+const ADVANCED_SCENARIOS: Scenario[] = HARD_PAIRS.map(([s, t], i) => buildScenario(`hard-${i}`, s, t));
 
 type Mode = "easy" | "hard";
 
@@ -162,21 +166,19 @@ function pickScenario(pool: Scenario[], excludeId: string | null): Scenario {
 function BoatDiagram({
   heading,
   onHeadingChange,
-  tillerValue,
-  onTillerChange,
+  tillerSide,
+  onTillerSideChange,
   tillerFeedback,
-  tillerWindward,
   crewSide,
   onCrewSideChange,
   disabled,
 }: {
   heading: number;
   onHeadingChange: (h: number) => void;
-  tillerValue: string | null;
-  onTillerChange: (v: string) => void;
+  /** Raw screen side the tiller handle is dragged to — fixed once set, independent of later crew moves. */
+  tillerSide: -1 | 0 | 1;
+  onTillerSideChange: (s: -1 | 1) => void;
   tillerFeedback?: "correct" | "incorrect";
-  /** Which rail the skipper dot is currently on — "toward you" means toward this side. */
-  tillerWindward: -1 | 1;
   crewSide: -1 | 0 | 1;
   onCrewSideChange: (s: -1 | 1) => void;
   disabled: boolean;
@@ -196,10 +198,9 @@ function BoatDiagram({
 
   // Tiller pivots at the rudder head (the stern point) and sweeps forward,
   // into the cockpit — centered when neutral, arcing toward a rail when pushed/pulled.
-  // "Toward you" is toward the windward rail, so which screen side that lands
-  // on depends on which tack you started the maneuver on.
-  const tillerSide =
-    tillerValue === "Pull Tiller Toward You" ? tillerWindward : tillerValue === "Push Tiller Away" ? -tillerWindward : 0;
+  // It stays wherever it was dragged even if the skipper dot moves afterward —
+  // e.g. on a tack, you push it toward the rail you're about to move to, so it
+  // should end up on the same side as the dot, not flip when the dot moves.
   const TILLER_LEN = 26;
   const tillerAngle = (tillerSide * 32 * Math.PI) / 180;
   const tillerX = STERN_X + TILLER_LEN * Math.sin(tillerAngle);
@@ -240,18 +241,15 @@ function BoatDiagram({
     if (!loc) return -1;
     return loc.x < STERN_X ? -1 : 1;
   }
-  function tillerAnswerFromSide(side: -1 | 1): string {
-    return side === tillerWindward ? "Pull Tiller Toward You" : "Push Tiller Away";
-  }
   function startTillerDrag(e: React.PointerEvent) {
     if (disabled) return;
     setDraggingTiller(true);
     (e.target as Element).setPointerCapture(e.pointerId);
-    onTillerChange(tillerAnswerFromSide(tillerSideFromClient(e.clientX, e.clientY)));
+    onTillerSideChange(tillerSideFromClient(e.clientX, e.clientY));
   }
   function moveTillerDrag(e: React.PointerEvent) {
     if (!draggingTiller || disabled) return;
-    onTillerChange(tillerAnswerFromSide(tillerSideFromClient(e.clientX, e.clientY)));
+    onTillerSideChange(tillerSideFromClient(e.clientX, e.clientY));
   }
 
   function endDrag() {
@@ -331,33 +329,29 @@ interface FieldResult {
 export default function ManeuverGame() {
   const [mode, setMode] = useState<Mode>("easy");
   const [scenario, setScenario] = useState<Scenario>(() => pickScenario(poolFor("easy"), null));
-  const [legIndex, setLegIndex] = useState(0);
   const [userHeading, setUserHeading] = useState(scenario.startHeading);
   const [userTiller, setUserTiller] = useState<string | null>(null);
+  const [tillerSide, setTillerSide] = useState<-1 | 0 | 1>(0);
   const [userSheet, setUserSheet] = useState<string | null>(null);
   const [userManeuver, setUserManeuver] = useState<Maneuver | null>(null);
   const [crewSide, setCrewSide] = useState<-1 | 0 | 1>(() => windwardOf(scenario.startHeading));
   const [submitted, setSubmitted] = useState(false);
-  const [scenarioOkSoFar, setScenarioOkSoFar] = useState(true);
   const [roundCorrect, setRoundCorrect] = useState(0);
   const [roundAttempted, setRoundAttempted] = useState(0);
 
-  const leg = scenario.legs[legIndex];
-  const legStart = legIndex === 0 ? scenario.startHeading : scenario.legs[legIndex - 1].targetHeading;
-  const isLastLeg = legIndex === scenario.legs.length - 1;
-  const needsSheet = leg.sheet !== null;
-  const expectedCrew = windwardOf(leg.targetHeading);
+  const needsSheet = scenario.sheet !== null;
+  const expectedCrew = windwardOf(scenario.targetHeading);
   const canCheck = userTiller !== null && userManeuver !== null && (!needsSheet || userSheet !== null);
   const roundComplete = roundAttempted >= ROUND_SIZE;
 
   function results(): FieldResult[] {
     const out: FieldResult[] = [
-      { ok: userHeading === leg.targetHeading, label: `Telltale → ${headingName(leg.targetHeading)}` },
-      { ok: userTiller === leg.tiller, label: `Tiller → ${leg.tiller}` },
+      { ok: userHeading === scenario.targetHeading, label: `Telltale → ${headingName(scenario.targetHeading)}` },
+      { ok: userTiller === scenario.tiller, label: `Tiller → ${scenario.tiller}` },
     ];
     if (expectedCrew !== 0) out.push({ ok: crewSide === expectedCrew, label: "Crew → Windward rail" });
-    out.push({ ok: userManeuver === leg.maneuver, label: `Move → ${MANEUVER_LABELS[leg.maneuver]}` });
-    if (needsSheet) out.push({ ok: userSheet === leg.sheet, label: `Sheet → ${leg.sheet}` });
+    out.push({ ok: userManeuver === scenario.maneuver, label: `Move → ${MANEUVER_LABELS[scenario.maneuver]}` });
+    if (needsSheet) out.push({ ok: userSheet === scenario.sheet, label: `Sheet → ${scenario.sheet}` });
     return out;
   }
 
@@ -365,19 +359,28 @@ export default function ManeuverGame() {
     if (!canCheck) return;
     setSubmitted(true);
     const allOk = results().every((r) => r.ok);
-    if (!allOk) setScenarioOkSoFar(false);
+    setRoundAttempted((n) => n + 1);
+    if (allOk) setRoundCorrect((n) => n + 1);
+  }
+
+  // "Toward you" means toward the windward rail you're on *right now* — frozen
+  // at the moment you drag, so moving the crew dot afterward (e.g. finishing a
+  // tack) doesn't retroactively change what you already answered.
+  function handleTillerSideChange(side: -1 | 1) {
+    setTillerSide(side);
+    const windwardNow = (crewSide || 1) as -1 | 1;
+    setUserTiller(side === windwardNow ? "Pull Tiller Toward You" : "Push Tiller Away");
   }
 
   function startScenario(s: Scenario) {
     setScenario(s);
-    setLegIndex(0);
     setUserHeading(s.startHeading);
     setUserTiller(null);
+    setTillerSide(0);
     setUserSheet(null);
     setUserManeuver(null);
     setCrewSide(windwardOf(s.startHeading));
     setSubmitted(false);
-    setScenarioOkSoFar(true);
   }
 
   function startRound(newMode: Mode) {
@@ -388,17 +391,6 @@ export default function ManeuverGame() {
   }
 
   function next() {
-    if (!isLastLeg) {
-      setLegIndex((i) => i + 1);
-      setUserHeading(leg.targetHeading);
-      setUserTiller(null);
-      setUserSheet(null);
-      setUserManeuver(null);
-      setSubmitted(false);
-      return;
-    }
-    setRoundAttempted((n) => n + 1);
-    if (scenarioOkSoFar) setRoundCorrect((n) => n + 1);
     startScenario(pickScenario(poolFor(mode), scenario.id));
   }
 
@@ -436,10 +428,10 @@ export default function ManeuverGame() {
           Mode
         </span>
         <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("easy") }} onClick={() => mode !== "easy" && startRound("easy")}>
-          Easy · 1 move
+          Easy · 1 point of sail
         </button>
         <button className="btn" style={{ padding: "4px 12px", ...modeButtonStyle("hard") }} onClick={() => mode !== "hard" && startRound("hard")}>
-          Hard · 1-2 moves
+          Hard · 1+ points of sail
         </button>
         {!roundComplete && (
           <span style={{ marginLeft: "auto", fontSize: "0.78rem", color: "var(--muted)" }}>
@@ -466,21 +458,16 @@ export default function ManeuverGame() {
       ) : (
         <>
           <div className="callout" style={{ marginBottom: 14 }}>
-            You're currently on <b>{headingName(legStart)}</b>. Get to <b>{headingName(leg.targetHeading)}</b>.
-            {scenario.legs.length > 1 && (
-              <span style={{ marginLeft: 8, fontSize: "0.78rem", color: "var(--muted)" }}>
-                (Step {legIndex + 1} of {scenario.legs.length})
-              </span>
-            )}
+            You're currently on <b>{headingName(scenario.startHeading)}</b>. Get to{" "}
+            <b>{headingName(scenario.targetHeading)}</b>.
           </div>
 
           <BoatDiagram
             heading={userHeading}
             onHeadingChange={setUserHeading}
-            tillerValue={userTiller}
-            onTillerChange={setUserTiller}
-            tillerFeedback={submitted ? (userTiller === leg.tiller ? "correct" : "incorrect") : undefined}
-            tillerWindward={(crewSide || 1) as -1 | 1}
+            tillerSide={tillerSide}
+            onTillerSideChange={handleTillerSideChange}
+            tillerFeedback={submitted ? (userTiller === scenario.tiller ? "correct" : "incorrect") : undefined}
             crewSide={crewSide}
             onCrewSideChange={setCrewSide}
             disabled={submitted}
@@ -503,7 +490,7 @@ export default function ManeuverGame() {
                     className="btn"
                     disabled={submitted}
                     onClick={() => setUserSheet(c)}
-                    style={{ flex: "1 1 160px", ...choiceStyle(userSheet === c, submitted && leg.sheet === c) }}
+                    style={{ flex: "1 1 160px", ...choiceStyle(userSheet === c, submitted && scenario.sheet === c) }}
                   >
                     {c}
                   </button>
@@ -523,7 +510,7 @@ export default function ManeuverGame() {
                   className="btn"
                   disabled={submitted}
                   onClick={() => setUserManeuver(m)}
-                  style={{ flex: "1 1 100px", ...choiceStyle(userManeuver === m, submitted && leg.maneuver === m) }}
+                  style={{ flex: "1 1 100px", ...choiceStyle(userManeuver === m, submitted && scenario.maneuver === m) }}
                 >
                   {MANEUVER_LABELS[m]}
                 </button>
@@ -555,7 +542,7 @@ export default function ManeuverGame() {
                 </div>
               </div>
               <button className="btn btn-primary btn-block" onClick={next}>
-                {isLastLeg ? "Next Question →" : "Next Move →"}
+                Next Question →
               </button>
             </>
           )}
