@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "4-8",
-  "windDirection": "NNE",
-  "sourceUpdateDate": "Aug 20, 2026 4:16:10 PM",
-  "notes": "It's a BEAUTIFUL day for a sail. Come down and enjoy! \nLast boat out at 6:15, all boats back by 7:15.\n\nBoats back at dock by 7:20. No boats off dock after  6:20 pm. ",
-  "fetchedAt": "2026-08-21T14:56:35.418Z"
+  "flagColor": "Black",
+  "windSpeed": "4-10",
+  "windDirection": "S",
+  "sourceUpdateDate": "Aug 21, 2026 3:02:48 PM",
+  "notes": "Weather incoming. Expected around 11:30. Will open after passage as able.\nLast boat out at 6:15, all boats back by 7:15.\n\n",
+  "fetchedAt": "2026-08-21T15:32:20.326Z"
 }
