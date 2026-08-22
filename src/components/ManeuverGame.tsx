@@ -3,6 +3,7 @@ import { MANEUVER_LABELS, type Maneuver } from "./PointsOfSailDiagram";
 import { shuffle } from "../lib/shuffle";
 import { windwardOf, headingName } from "../lib/boatMath";
 import BoatDiagram from "./BoatDiagram";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
 /**
  * Drag-the-telltale practice: given a current point of sail and a target
@@ -108,10 +109,10 @@ interface FieldResult {
 }
 
 export default function ManeuverGame() {
-  const [mode, setMode] = useState<Mode>("easy");
+  const [mode, setMode] = useLocalStorage<Mode>("sailing101-maneuver-mode", "easy");
   // A shuffled, fixed-length pass through the current mode's whole pool —
   // same "question X of N" shape as the regular quizzes, not an open-ended draw.
-  const [questions, setQuestions] = useState<Scenario[]>(() => shuffle(poolFor("easy")));
+  const [questions, setQuestions] = useState<Scenario[]>(() => shuffle(poolFor(mode)));
   const [index, setIndex] = useState(0);
   const scenario = questions[index];
   const [userHeading, setUserHeading] = useState(scenario.startHeading);
