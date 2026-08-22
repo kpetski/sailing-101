@@ -382,12 +382,12 @@ export default function ChartCoursePractice() {
 
   return (
     <div className="card" style={{ marginBottom: 20, paddingBottom: 8 }}>
-      <div className="eyebrow" style={{ marginBottom: 6 }}>
+      <div className="eyebrow" style={{ marginBottom: 3 }}>
         Chart a Course — sail to the mark, one move at a time
       </div>
 
       {!finished && (
-        <div style={{ textAlign: "right", fontSize: "0.78rem", color: "var(--muted)", marginBottom: 6 }}>
+        <div style={{ textAlign: "right", fontSize: "0.78rem", color: "var(--muted)", marginBottom: 3 }}>
           Question {index + 1} of {questions.length}
         </div>
       )}
@@ -412,7 +412,7 @@ export default function ChartCoursePractice() {
         </div>
       ) : (
         <>
-          <div className="callout" style={{ marginBottom: 8, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div className="callout" style={{ marginBottom: 6, padding: "6px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <span style={{ fontSize: "0.92rem" }}>
               You're on <b>{headingName(currentHeading)}</b>. Sail to the mark.
               {hazardHint && <span style={{ color: "var(--rust)" }}> {hazardHint}</span>}
@@ -430,7 +430,7 @@ export default function ChartCoursePractice() {
             )}
           </div>
 
-          <div style={{ maxWidth: 260, margin: "0 auto" }}>
+          <div style={{ maxWidth: 200, margin: "0 auto" }}>
             <LakeMap
               boats={[{ x: boatX, y: boatY, heading: currentHeading, color: submitted ? (isCorrect ? "#2f7a5c" : "#a4433a") : "#0f3d3e" }]}
               marks={[{ x: scenario.markX, y: scenario.markY, label: "Goal" }]}
@@ -439,7 +439,7 @@ export default function ChartCoursePractice() {
             />
           </div>
 
-          <div style={{ marginTop: 6, maxWidth: 235, marginLeft: "auto", marginRight: "auto" }}>
+          <div style={{ marginTop: 2, maxWidth: 235, marginLeft: "auto", marginRight: "auto" }}>
             <BoatDiagram
               heading={currentHeading}
               telltaleInteractive={false}
