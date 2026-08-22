@@ -136,13 +136,35 @@ export default function BoatDiagram({
       <path d={`M100,126 Q${(100 + jibOut).toFixed(1)},140 100,148`} fill="none" stroke="#20302c" strokeWidth={1.4} opacity={0.85} />
       <path d={`M100,150 Q${(100 + mainOut).toFixed(1)},160 100,172`} fill="none" stroke="#20302c" strokeWidth={1.4} opacity={0.85} />
 
-      {/* skipper — click an arrow to move to the other rail */}
+      {/* skipper — click an arrow to move to the other rail. Each arrow gets
+          an invisible, larger rect underneath sharing its onClick — the
+          visible triangle alone is too small a target on a phone. */}
       <circle cx={MAST_X + crewSide * 14} cy={164} r={4.5} fill="#0f3d3e" stroke="#fff" strokeWidth={1} />
+      <rect
+        x={40}
+        y={148}
+        width={30}
+        height={44}
+        fill="#000"
+        opacity={0}
+        style={{ cursor: disabled ? "default" : "pointer" }}
+        onClick={disabled ? undefined : () => onCrewSideChange(-1)}
+      />
       <polygon
         points="52,164 66,158 66,170"
         fill={crewSide === -1 ? "#0f3d3e" : "#b7c4bd"}
         style={{ cursor: disabled ? "default" : "pointer" }}
         onClick={disabled ? undefined : () => onCrewSideChange(-1)}
+      />
+      <rect
+        x={130}
+        y={148}
+        width={30}
+        height={44}
+        fill="#000"
+        opacity={0}
+        style={{ cursor: disabled ? "default" : "pointer" }}
+        onClick={disabled ? undefined : () => onCrewSideChange(1)}
       />
       <polygon
         points="148,164 134,158 134,170"
@@ -169,6 +191,20 @@ export default function BoatDiagram({
       {/* tiller, pivoting at the transom */}
       <circle cx={STERN_X} cy={STERN_Y} r={3} fill="#20302c" />
       <line x1={STERN_X} y1={STERN_Y} x2={tillerX} y2={tillerY} stroke={tillerColor} strokeWidth={4} strokeLinecap="round" />
+      {/* Invisible, much larger grab area underneath the visible handle — at
+          this diagram's typical render size the visible handle alone (r=10-13
+          in a 200-wide viewBox) is far too small a target to reliably grab
+          with a finger. Enlarging just the hit area (not the visual size)
+          fixes that without costing screen space elsewhere. */}
+      <circle
+        cx={tillerX}
+        cy={tillerY}
+        r={24}
+        fill="#000"
+        opacity={0}
+        style={{ cursor: disabled ? "default" : draggingTiller ? "grabbing" : "grab", touchAction: "none" }}
+        onPointerDown={startTillerDrag}
+      />
       <circle
         cx={tillerX}
         cy={tillerY}
