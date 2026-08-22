@@ -175,6 +175,20 @@ export default function BoatDiagram({
 
       <circle cx={MAST_X} cy={MAST_Y} r={3.5} fill="#20302c" />
       <line x1={MAST_X} y1={MAST_Y} x2={tipX} y2={tipY} stroke="#c8973a" strokeWidth={3} strokeLinecap="round" />
+      {/* Same invisible-larger-hit-area trick as the tiller — the visible
+          telltale handle (r=10-13) is too small a target to reliably grab
+          on a phone, and this is Maneuver Practice's primary interaction. */}
+      {telltaleInteractive && (
+        <circle
+          cx={tipX}
+          cy={tipY}
+          r={24}
+          fill="#000"
+          opacity={0}
+          style={{ cursor: disabled ? "default" : draggingTelltale ? "grabbing" : "grab", touchAction: "none" }}
+          onPointerDown={startTelltaleDrag}
+        />
+      )}
       <circle
         cx={tipX}
         cy={tipY}
