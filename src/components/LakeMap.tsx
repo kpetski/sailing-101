@@ -10,11 +10,57 @@
 export const LAKE_VIEW_W = 520;
 export const LAKE_VIEW_H = 360;
 
-const LAKE_PATH =
+export const LAKE_PATH =
   "M 70,130 C 55,95 85,55 145,45 C 195,37 235,58 258,45 C 288,28 340,22 385,42 " +
   "C 435,63 478,78 486,118 C 493,152 465,172 458,198 C 450,228 480,248 468,278 " +
   "C 458,305 412,315 375,298 C 345,284 325,300 292,292 C 252,282 232,302 192,296 " +
   "C 148,289 128,262 96,266 C 66,270 42,242 47,204 C 50,180 32,164 37,142 C 40,128 55,128 70,130 Z";
+
+// A path element used purely for its geometry (isPointInFill), kept out of
+// view — lets scenario generators (Chart a Course) check a candidate point
+// against the lake's actual irregular shape instead of a bounding box, so a
+// "goal" mark can never land outside the drawn water. Chrome's isPointInFill
+// silently returns wrong answers for a path that's never attached to the
+// document (verified — a detached element reports every point as outside),
+// so this has to actually live in the DOM; zero-size + absolute positioning
+// keeps it from affecting layout or being visible.
+let lakeGeometryPath: SVGPathElement | null = null;
+function getLakeGeometryPath(): SVGPathElement | null {
+  if (typeof document === "undefined") return null;
+  if (!lakeGeometryPath) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "0");
+    svg.setAttribute("height", "0");
+    svg.style.position = "absolute";
+    lakeGeometryPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    lakeGeometryPath.setAttribute("d", LAKE_PATH);
+    svg.appendChild(lakeGeometryPath);
+    document.body.appendChild(svg);
+  }
+  return lakeGeometryPath;
+}
+
+/** Whether (x,y), in the lake's own coordinate space, falls inside the drawn water shape. */
+export function isInsideLake(x: number, y: number): boolean {
+  const el = getLakeGeometryPath();
+  if (!el || typeof el.isPointInFill !== "function") return true;
+  try {
+    return el.isPointInFill(new DOMPoint(x, y));
+  } catch {
+    return true;
+  }
+}
+
+/** Like isInsideLake, but also requires clearance from the shoreline in every direction — keeps a mark/hazard from rendering right at the water's edge. */
+export function isSafelyInsideLake(x: number, y: number, margin: number): boolean {
+  if (!isInsideLake(x, y)) return false;
+  const probes = 8;
+  for (let i = 0; i < probes; i++) {
+    const angle = (i / probes) * Math.PI * 2;
+    if (!isInsideLake(x + margin * Math.cos(angle), y + margin * Math.sin(angle))) return false;
+  }
+  return true;
+}
 
 function normalizeDeg(deg: number) {
   return (((deg + 180) % 360) + 360) % 360 - 180;

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { windwardOf, headingName, REAL_POINTS, applyHeadingMove, legalNextHeadings } from "../lib/boatMath";
 import BoatDiagram from "./BoatDiagram";
-import LakeMap, { type LakeObstacle } from "./LakeMap";
+import LakeMap, { isSafelyInsideLake, type LakeObstacle } from "./LakeMap";
 
 /**
  * Chart a Course: same steering controls as Navigate (tiller + crew, one
@@ -126,20 +126,29 @@ function generateScenario(id: string): ChartScenario {
     const path = walkPath(startHeading, legs);
     const [markX, markY] = path[path.length - 1];
     if (Math.hypot(markX - ORIGIN.x, markY - ORIGIN.y) < STEP * 1.5) continue;
+    // The lake is an irregular blob, not a rectangle — a mark generated from
+    // plain coordinate math can land past the shoreline. Reject anything
+    // that isn't safely surrounded by water before it's ever shown.
+    if (!isSafelyInsideLake(markX, markY, 16)) continue;
     const obstacles = buildObstacles(variant, path);
     if (obstacles === null) continue;
+    if (obstacles.some((o) => !isSafelyInsideLake(o.x, o.y, o.r + 4))) continue;
     return { id, startHeading, markX, markY, obstacles };
   }
-  // Fallback after repeated bad luck placing a hazard: plain open water,
-  // same distance-from-origin guarantee as above, always terminates fast.
+  // Fallback after repeated bad luck placing a hazard or a mark near the
+  // shore: plain open water, same guarantees as above, generously capped
+  // so it can't spin forever even in a pathological case.
   let startHeading: number = REAL_POINTS[0];
   let markX = ORIGIN.x;
   let markY = ORIGIN.y;
-  do {
+  for (let attempt = 0; attempt < 200; attempt++) {
     startHeading = REAL_POINTS[Math.floor(Math.random() * REAL_POINTS.length)];
     const path = walkPath(startHeading, 3 + Math.floor(Math.random() * 3));
     [markX, markY] = path[path.length - 1];
-  } while (Math.hypot(markX - ORIGIN.x, markY - ORIGIN.y) < STEP * 1.5);
+    if (Math.hypot(markX - ORIGIN.x, markY - ORIGIN.y) < STEP * 1.5) continue;
+    if (!isSafelyInsideLake(markX, markY, 16)) continue;
+    break;
+  }
   return { id, startHeading, markX, markY, obstacles: [] };
 }
 
