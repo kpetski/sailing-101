@@ -430,7 +430,7 @@ export default function ChartCoursePractice() {
             )}
           </div>
 
-          <div style={{ maxWidth: 300, margin: "0 auto" }}>
+          <div style={{ maxWidth: 260, margin: "0 auto" }}>
             <LakeMap
               boats={[{ x: boatX, y: boatY, heading: currentHeading, color: submitted ? (isCorrect ? "#2f7a5c" : "#a4433a") : "#0f3d3e" }]}
               marks={[{ x: scenario.markX, y: scenario.markY, label: "Goal" }]}
@@ -439,7 +439,7 @@ export default function ChartCoursePractice() {
             />
           </div>
 
-          <div style={{ marginTop: 6, maxWidth: 190, marginLeft: "auto", marginRight: "auto" }}>
+          <div style={{ marginTop: 6, maxWidth: 235, marginLeft: "auto", marginRight: "auto" }}>
             <BoatDiagram
               heading={currentHeading}
               telltaleInteractive={false}
