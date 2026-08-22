@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "6-8",
-  "windDirection": "S",
-  "sourceUpdateDate": "Aug 21, 2026 10:51:10 PM",
-  "notes": "NO Enrichment. Open until WX gets closer. Will have to close if/when needed. AREA A ONLY.\nLast boat out at 6:15, all boats back by 7:15.\n\n",
-  "fetchedAt": "2026-08-22T13:47:26.711Z"
+  "flagColor": "Yellow",
+  "windSpeed": "8-12",
+  "windDirection": "W",
+  "sourceUpdateDate": "Aug 22, 2026 1:59:00 PM",
+  "notes": "Enrichment Club at 9:30 am. Open sailing starts 1:00 pm.\nPOTLUCK for members at 12:30 pm.",
+  "fetchedAt": "2026-08-22T14:02:13.081Z"
 }
