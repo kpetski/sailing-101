@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   update:
@@ -28,6 +29,13 @@ jobs:
             git add public/flag-status.json
             git commit -m "Update flag status snapshot"
             git push
+            # A push made with the default GITHUB_TOKEN doesn't trigger other
+            # workflows' `on: push` (GitHub's anti-recursion rule), so
+            # deploy.yml would never rebuild the live site on its own —
+            # kick it off explicitly instead.
+            gh workflow run deploy.yml --ref main
           else
             echo "No change in flag status"
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}
