@@ -225,7 +225,7 @@ export default function NavigatePractice() {
         <>
           <div className="callout" style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <span>
-              You're at <b>{headingName(currentHeading)}</b>. Get to <b>{headingName(scenario.targetHeading)}</b>.
+              You're at <b>{headingName(scenario.startHeading)}</b>. Get to <b>{headingName(scenario.targetHeading)}</b>.
             </span>
             {!submitted && (
               <button
