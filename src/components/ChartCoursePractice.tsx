@@ -267,7 +267,7 @@ export default function ChartCoursePractice() {
         return;
       }
       if (tillerPushTick <= crewMoveTick) {
-        setMoveError("For a jibe, move the crew to the new rail first, then push the tiller — not the other way around.");
+        setMoveError("For a jibe, first center the tiller on a broad reach, move the crew to the new rail, then push the tiller.");
         return;
       }
     }
