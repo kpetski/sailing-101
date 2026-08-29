@@ -1,8 +1,8 @@
 {
-  "flagColor": "Black",
-  "windSpeed": "20-24",
-  "windDirection": "SE",
-  "sourceUpdateDate": "Aug 28, 2026 10:35:01 PM",
-  "notes": "CLOSED due to High Winds. We'll see in the morning.\n\nSaturday 8/29: \nEnrichment Club 9:30 am (Ensigns only); Quarter Barrel Regatta 9:30 am; Open Sailing 2:00 pm",
-  "fetchedAt": "2026-08-29T03:12:06.441Z"
+  "flagColor": "Yellow",
+  "windSpeed": "8-14",
+  "windDirection": "S",
+  "sourceUpdateDate": "Aug 29, 2026 2:06:26 PM",
+  "notes": "Saturday 8/29: \nEnrichment Club 9:30 am (Ensigns only); Quarter Barrel Regatta 9:30 am; Open Sailing 2:00 pm",
+  "fetchedAt": "2026-08-29T15:26:04.736Z"
 }
