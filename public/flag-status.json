@@ -1,8 +1,8 @@
 {
-  "flagColor": "Green",
-  "windSpeed": "16-18",
-  "windDirection": "SSW",
-  "sourceUpdateDate": "Aug 31, 2026 5:43:49 PM",
-  "notes": "Last boat out at 6:00. All boats at dock by 7:00",
-  "fetchedAt": "2026-08-31T17:49:13.967Z"
+  "flagColor": "Yellow",
+  "windSpeed": "10-13",
+  "windDirection": "SW",
+  "sourceUpdateDate": "Aug 31, 2026 9:48:51 PM",
+  "notes": "Monitoring winds -flag will change accordingly.\nLast boat out at 6:00. All boats at dock by 7:00",
+  "fetchedAt": "2026-08-31T22:04:17.300Z"
 }
