@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "2-5",
-  "windDirection": "southeast",
-  "sourceUpdateDate": "Sep 1, 2026 5:34:48 PM",
-  "notes": "Winds have the potential to build...but they haven't. Area A only for haze and fog. Last boat out at 6:00. All boats at dock by 7:00",
-  "fetchedAt": "2026-09-01T18:41:52.893Z"
+  "flagColor": "Black",
+  "windSpeed": "6-10",
+  "windDirection": "SW",
+  "sourceUpdateDate": "Sep 1, 2026 7:58:39 PM",
+  "notes": "Black flag as we watch the line of storms and lightning move through the area.\n\nLast boat out at 5:55pm. All boats at dock by 6:55pm",
+  "fetchedAt": "2026-09-01T21:24:48.693Z"
 }
