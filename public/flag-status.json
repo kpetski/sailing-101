@@ -1,8 +1,8 @@
 {
-  "flagColor": "Black",
-  "windSpeed": "15-20",
-  "windDirection": "NNE",
-  "sourceUpdateDate": "Sep 4, 2026 2:01:54 PM",
-  "notes": "We will open for sailing when wind and weather allow. Last boat out at 5:55pm. All boats at dock by 6:55pm",
-  "fetchedAt": "2026-09-04T14:43:52.136Z"
+  "flagColor": "Green",
+  "windSpeed": "16-18",
+  "windDirection": "SSW",
+  "sourceUpdateDate": "Sep 4, 2026 5:47:05 PM",
+  "notes": "Unstable weather expected this evening. Last boat out at 5:55pm. All boats at dock by 6:55pm",
+  "fetchedAt": "2026-09-04T17:50:28.027Z"
 }
