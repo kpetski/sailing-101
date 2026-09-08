@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "6-8",
-  "windDirection": "WSW",
-  "sourceUpdateDate": "Sep 8, 2026 2:42:42 PM",
-  "notes": "Watching for incoming weather. Area A only. Last boat out at 5:50pm. All boats at dock by 6:50 pm.",
-  "fetchedAt": "2026-09-08T18:15:39.889Z"
+  "flagColor": "Yellow",
+  "windSpeed": "12-14",
+  "windDirection": "ESE",
+  "sourceUpdateDate": "Sep 8, 2026 6:55:28 PM",
+  "notes": "Watching for incoming weather. Last boat out at 5:50pm. All boats at dock by 6:50 pm.",
+  "fetchedAt": "2026-09-08T21:13:44.107Z"
 }
