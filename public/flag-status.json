@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "7-10",
-  "windDirection": "East",
-  "sourceUpdateDate": "Sep 10, 2026 6:36:29 PM",
+  "flagColor": "Green",
+  "windSpeed": "16-19",
+  "windDirection": "ESE",
+  "sourceUpdateDate": "Sep 11, 2026 4:46:37 PM",
   "notes": "Last boat out at 5:45pm. All boats at dock by 6:45 pm.",
-  "fetchedAt": "2026-09-11T14:49:16.783Z"
+  "fetchedAt": "2026-09-11T17:56:43.463Z"
 }
