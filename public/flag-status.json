@@ -1,8 +1,8 @@
 {
-  "flagColor": "Green",
-  "windSpeed": "15-19",
-  "windDirection": "NW",
-  "sourceUpdateDate": "Sep 13, 2026 1:54:30 PM",
+  "flagColor": "Yellow",
+  "windSpeed": "10-12",
+  "windDirection": "W",
+  "sourceUpdateDate": "Sep 13, 2026 5:27:00 PM",
   "notes": "Kite festival this weekend! Last boat out at 5:40pm. All boats at dock by 6:40 pm.",
-  "fetchedAt": "2026-09-13T14:46:46.378Z"
+  "fetchedAt": "2026-09-13T17:43:35.816Z"
 }
