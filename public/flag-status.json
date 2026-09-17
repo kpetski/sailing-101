@@ -1,8 +1,8 @@
 {
-  "flagColor": "Black",
-  "windSpeed": "10-14",
+  "flagColor": "White",
+  "windSpeed": "4-6",
   "windDirection": "N",
-  "sourceUpdateDate": "Sep 17, 2026 3:11:37 PM",
-  "notes": "Last boat out at 5:30pm. All boats at dock by 6:30 pm.",
-  "fetchedAt": "2026-09-17T19:09:20.909Z"
+  "sourceUpdateDate": "Sep 17, 2026 9:09:05 PM",
+  "notes": "Area A only as the fog lingers.  Last boat out at 5:30pm. All boats at dock by 6:30 pm.",
+  "fetchedAt": "2026-09-17T22:07:57.439Z"
 }
