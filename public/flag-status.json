@@ -1,8 +1,8 @@
 {
-  "flagColor": "Yellow",
-  "windSpeed": "10-12",
-  "windDirection": "NE",
-  "sourceUpdateDate": "Sep 18, 2026 9:58:44 PM",
-  "notes": "Looks like weather will start arriving around 5:30.Areas A and C only. Likely early closure tonight.",
-  "fetchedAt": "2026-09-18T22:39:48.169Z"
+  "flagColor": "Green",
+  "windSpeed": "12-17",
+  "windDirection": "NNE",
+  "sourceUpdateDate": "Sep 18, 2026 11:09:07 PM",
+  "notes": "Looks like weather will start arriving soon.Areas A and C only. Likely early closure tonight.",
+  "fetchedAt": "2026-09-19T00:38:14.276Z"
 }
