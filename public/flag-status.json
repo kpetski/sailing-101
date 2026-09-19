@@ -1,8 +1,8 @@
 {
-  "flagColor": "Green",
-  "windSpeed": "12-17",
-  "windDirection": "NNE",
-  "sourceUpdateDate": "Sep 18, 2026 11:09:07 PM",
-  "notes": "Looks like weather will start arriving soon.Areas A and C only. Likely early closure tonight.",
-  "fetchedAt": "2026-09-19T00:38:14.276Z"
+  "flagColor": "White",
+  "windSpeed": "2-4",
+  "windDirection": "S",
+  "sourceUpdateDate": "Sep 19, 2026 1:51:38 PM",
+  "notes": "The weather looks like it's stabilizing.  Enrichment is currently on but Area A only and we'll change the status if the storm shifts or changes or something pops up.\n\nOpen sail starts at 1pm.  Last boat out by 5:35pm.  Docks by 6:35pm.",
+  "fetchedAt": "2026-09-19T14:08:35.980Z"
 }
