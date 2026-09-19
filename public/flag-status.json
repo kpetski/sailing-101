@@ -1,8 +1,8 @@
 {
   "flagColor": "White",
-  "windSpeed": "2-4",
-  "windDirection": "S",
-  "sourceUpdateDate": "Sep 19, 2026 1:51:38 PM",
-  "notes": "The weather looks like it's stabilizing.  Enrichment is currently on but Area A only and we'll change the status if the storm shifts or changes or something pops up.\n\nOpen sail starts at 1pm.  Last boat out by 5:35pm.  Docks by 6:35pm.",
-  "fetchedAt": "2026-09-19T14:08:35.980Z"
+  "windSpeed": "4-5",
+  "windDirection": "NE",
+  "sourceUpdateDate": "Sep 19, 2026 3:44:48 PM",
+  "notes": "The weather looks like it's stabilizing.  Enrichment is currently on but Area A only and we'll change the status if the storm shifts or changes or something pops up.\n\nOpen sail starts at 1pm.  Last boat out by 5:25pm.  Docks by 6:25pm.",
+  "fetchedAt": "2026-09-19T17:15:30.511Z"
 }
