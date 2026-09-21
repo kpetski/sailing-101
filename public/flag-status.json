@@ -1,8 +1,8 @@
 {
-  "flagColor": "Black",
-  "windSpeed": "18-28",
-  "windDirection": "N",
-  "sourceUpdateDate": "Sep 20, 2026 3:23:55 PM",
-  "notes": "Not looking good for today.  Gales to 35 knots. Last call 5:35 (optim istically), Docks by 6:35PM",
-  "fetchedAt": "2026-09-21T01:44:34.220Z"
+  "flagColor": "Green",
+  "windSpeed": "18-20",
+  "windDirection": "NNE",
+  "sourceUpdateDate": "Sep 21, 2026 2:48:48 PM",
+  "notes": "ALL sailing inside breakwall. High waves. Last boat out: 5:20. Back to Docks by 6:20 PM",
+  "fetchedAt": "2026-09-21T16:45:18.584Z"
 }
