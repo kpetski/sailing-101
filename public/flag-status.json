@@ -1,8 +1,8 @@
 {
-  "flagColor": "Green",
-  "windSpeed": "15-17",
-  "windDirection": "N",
-  "sourceUpdateDate": "Sep 23, 2026 7:06:52 PM",
-  "notes": "ALL sailing inside breakwall. High waves. Last boat out: 5:20. Back to Docks by 6:20 PM",
-  "fetchedAt": "2026-09-24T00:32:18.648Z"
+  "flagColor": "White",
+  "windSpeed": "8-10",
+  "windDirection": "ENE",
+  "sourceUpdateDate": "Sep 24, 2026 2:57:59 PM",
+  "notes": "Last boat out: 5:15 Back to Docks by 6:15 PM",
+  "fetchedAt": "2026-09-24T15:40:59.976Z"
 }
