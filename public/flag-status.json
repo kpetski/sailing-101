@@ -1,8 +1,8 @@
 {
-  "flagColor": "Yellow",
-  "windSpeed": "11-12",
-  "windDirection": "ESE",
-  "sourceUpdateDate": "Sep 26, 2026 1:56:19 PM",
+  "flagColor": "White",
+  "windSpeed": "7-8",
+  "windDirection": "E",
+  "sourceUpdateDate": "Sep 26, 2026 6:44:28 PM",
   "notes": "Open Sailing starts at 1 pm. Last boat out: 5:15 pm. All boats back to docks by 6:15 pm.",
-  "fetchedAt": "2026-09-26T18:14:56.567Z"
+  "fetchedAt": "2026-09-26T21:14:45.800Z"
 }
