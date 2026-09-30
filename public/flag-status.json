@@ -1,8 +1,8 @@
 {
-  "flagColor": "Green",
-  "windSpeed": "12-18",
+  "flagColor": "Yellow",
+  "windSpeed": "10-14",
   "windDirection": "ESE",
-  "sourceUpdateDate": "Sep 29, 2026 8:35:42 PM",
-  "notes": "Fog has cleared for the time being. Area A only. Last boat out: 5:15 pm. All boats back to docks by 6:15 pm.",
-  "fetchedAt": "2026-09-30T00:21:34.549Z"
+  "sourceUpdateDate": "Sep 30, 2026 3:14:14 PM",
+  "notes": "Rainy and spotty Fog. Area A only. Last boat out: 5:05 pm. All boats back to docks by 6:05 pm.",
+  "fetchedAt": "2026-09-30T16:38:03.423Z"
 }
