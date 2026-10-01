@@ -1,8 +1,8 @@
 {
-  "flagColor": "Yellow",
-  "windSpeed": "10-14",
-  "windDirection": "S",
-  "sourceUpdateDate": "Sep 30, 2026 8:18:12 PM",
-  "notes": "Inside the break wall only. We are monitoring fog conditions. Last boat out: 5:05 pm. All boats back to docks by 6:05 pm.",
-  "fetchedAt": "2026-10-01T00:27:44.649Z"
+  "flagColor": "White",
+  "windSpeed": "5-10",
+  "windDirection": "W",
+  "sourceUpdateDate": "Oct 1, 2026 4:07:25 PM",
+  "notes": "Expecting more storms this afternoon. Last boat out: 5:05 pm. All boats back to docks by 6:05 pm.",
+  "fetchedAt": "2026-10-01T17:14:05.202Z"
 }
