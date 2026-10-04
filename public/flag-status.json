@@ -1,8 +1,8 @@
 {
   "flagColor": "Green",
-  "windSpeed": "15-17",
+  "windSpeed": "18-20",
   "windDirection": "W",
-  "sourceUpdateDate": "Oct 4, 2026 2:48:31 PM",
-  "notes": "Forecast is for the winds to build.\nLincoln Memorial Drive is open.\nOpen sailing begins at 1:00 pm.\nLast boat out: 5:00 pm. All boats back to docks by 6:00 pm.",
-  "fetchedAt": "2026-10-04T15:37:46.716Z"
+  "sourceUpdateDate": "Oct 4, 2026 6:31:33 PM",
+  "notes": "Areas A & B only.\nLincoln Memorial Drive is open.\nOpen sailing begins at 1:00 pm.\nLast boat out: 5:00 pm. All boats back to docks by 6:00 pm.",
+  "fetchedAt": "2026-10-04T18:47:02.065Z"
 }
