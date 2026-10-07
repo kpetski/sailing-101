@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "5-9",
+  "flagColor": "Black",
+  "windSpeed": "19-24",
   "windDirection": "W",
-  "sourceUpdateDate": "Oct 7, 2026 2:32:15 PM",
-  "notes": "It is a promising sailing day! Last boat out: 4:55 pm. All boats back to docks by 5:55 pm.",
-  "fetchedAt": "2026-10-07T17:39:02.916Z"
+  "sourceUpdateDate": "Oct 7, 2026 9:59:34 PM",
+  "notes": "We will try again tomorrow! ",
+  "fetchedAt": "2026-10-07T22:15:44.658Z"
 }
