@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "6-8",
-  "windDirection": "SSW",
-  "sourceUpdateDate": "Oct 11, 2026 1:35:13 PM",
-  "notes": "Enrichment at 9:30 am. Open sailing at 1:00 pm. Last boat out by 4:45pm. Docks by 5:45pm.",
-  "fetchedAt": "2026-10-11T16:29:41.228Z"
+  "flagColor": "Green",
+  "windSpeed": "15-16",
+  "windDirection": "SSE",
+  "sourceUpdateDate": "Oct 11, 2026 5:36:50 PM",
+  "notes": "Last boat out by 4:45pm. Docks by 5:45pm.",
+  "fetchedAt": "2026-10-11T20:30:37.038Z"
 }
