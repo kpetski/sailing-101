@@ -1,8 +1,8 @@
 {
-  "flagColor": "White",
-  "windSpeed": "4-8",
-  "windDirection": "NE",
-  "sourceUpdateDate": "Oct 13, 2026 8:10:58 PM",
-  "notes": "We have a short waitlist of people taking boats out as they come back to the dock.  Four people to a boat until that waitlist is cleared.\n\nLast boat out by 4:40pm. Docks by 5:40pm.",
-  "fetchedAt": "2026-10-14T01:15:49.690Z"
+  "flagColor": "Black",
+  "windSpeed": "16-23",
+  "windDirection": "NNW",
+  "sourceUpdateDate": "Oct 14, 2026 3:31:16 PM",
+  "notes": "Winds are expected to build this morning.   \n\nLast boat out by 4:40pm. Docks by 5:40pm.",
+  "fetchedAt": "2026-10-14T15:40:29.744Z"
 }
