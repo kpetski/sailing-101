@@ -1,8 +1,8 @@
 {
-  "flagColor": "Black",
-  "windSpeed": "16-23",
-  "windDirection": "NNW",
-  "sourceUpdateDate": "Oct 14, 2026 3:31:16 PM",
-  "notes": "Winds are expected to build this morning.   \n\nLast boat out by 4:40pm. Docks by 5:40pm.",
-  "fetchedAt": "2026-10-14T15:40:29.744Z"
+  "flagColor": "Yellow",
+  "windSpeed": "13-15",
+  "windDirection": "N",
+  "sourceUpdateDate": "Oct 14, 2026 8:31:59 PM",
+  "notes": "Last boat out by 4:40pm. Docks by 5:40pm.",
+  "fetchedAt": "2026-10-14T22:40:57.148Z"
 }
